@@ -1,0 +1,11 @@
+$topPanelOffset: 11em;
+$topPanelOffsetWithSearch: 17.5em;
+$sideBarButtonSize: 5em;
+$topBarHeight: 6.4em;
+
+:export {
+  topPanelOffset: $topPanelOffset;
+  topPanelOffsetWithSearch: $topPanelOffsetWithSearch;
+  sideBarButtonSize: $sideBarButtonSize;
+  topBarHeight: $topBarHeight;
+}
