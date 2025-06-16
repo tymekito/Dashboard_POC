@@ -6,7 +6,6 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import globals from "globals";
 
 export default defineConfig([
-  { ignores: ["dist", "keycloak-ibos-ui-theme/**"] },
   {
     name: "app/src",
     files: ["**/*.{js,mjs,jsx,vue}"],

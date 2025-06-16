@@ -1,6 +1,5 @@
 {
-  "$schema": "https://json.schemastore.org/prettierrc",
-  "arrowParens": "avoid",
+  "arrowParens": "always",
   "bracketSpacing": true,
   "endOfLine": "lf",
   "htmlWhitespaceSensitivity": "css",
@@ -11,8 +10,18 @@
   "jsxSingleQuote": true,
   "printWidth": 120,
   "proseWrap": "preserve",
-  "plugins": ["@trivago/prettier-plugin-sort-imports"],
-  "importOrder": ["^vue$", "^@vue/", "^vue", "<THIRD_PARTY_MODULES>", "^~/", "^[../]+", "^[./]"],
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports"
+  ],
+  "importOrder": [
+    "^vue$",
+    "^@vue/",
+    "^vue",
+    "<THIRD_PARTY_MODULES>",
+    "^~/",
+    "^[../]+",
+    "^[./]"
+  ],
   "quoteProps": "as-needed",
   "requirePragma": false,
   "semi": true,
