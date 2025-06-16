@@ -3,13 +3,17 @@
 </template>
 
 <script>
+import { useMapPointsStore } from "@/stores/external/mapPoints.js";
 import * as PIXI from "pixi.js";
 import MapImage from "./files/map.png";
 import RobotImage from "./files/robot.png";
-import { mockPoints, mockConnections, mockRobotPath } from "./mockDataPixi.js";
 
 export default {
   name: "MapContent",
+  setup() {
+    const mapPointsStore = useMapPointsStore();
+    return { mapPointsStore };
+  },
   data() {
     return {
       app: null,
@@ -20,13 +24,39 @@ export default {
       currentPathIndex: 0,
       isMoving: false,
       mapResolution: 0.05,
-      originX: 0,
-      originY: 0,
+      originX: 17.6,
+      originY: -70,
       resizeObserver: null,
       mapContainer: null,
       isDragging: false,
       lastPointerPosition: { x: 0, y: 0 },
     };
+  },
+  computed: {
+    mapPoints() {
+      if (!this.mapPointsStore.facilityData?.spots) return [];
+      console.log(this.mapPointsStore.facilityData.spots);
+      return Object.entries(this.mapPointsStore.facilityData.spots).map(([key, spot]) => ({
+        id: key,
+        name: spot.name || key,
+        x: this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y).x,
+        y: this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y).y,
+        worldX: spot.entrance.position.x,
+        worldY: spot.entrance.position.y,
+        worldZ: spot.entrance.position.z,
+        orientation: spot.entrance.orientation,
+      }));
+    },
+  },
+  watch: {
+    "mapPointsStore.facilityData": {
+      handler() {
+        if (this.mapPointsStore.facilityData && this.app) {
+          this.updateMapPoints();
+        }
+      },
+      deep: true,
+    },
   },
   mounted() {
     this.initPixi();
@@ -41,189 +71,125 @@ export default {
     }
   },
   methods: {
+    // Convert world coordinates to pixel coordinates
+    worldToPixel(worldX, worldY) {
+      console.log(this.originX, this.originY, this.mapResolution);
+      const pixelX = (worldX + this.originX) / this.mapResolution;
+      const pixelY = this.mapTexture.height - (worldY - this.originY) / this.mapResolution;
+      return { x: pixelX, y: pixelY };
+    },
+
     async initPixi() {
-      // Tworzenie aplikacji Pixi v8
       this.app = new PIXI.Application();
 
       await this.app.init({
         width: this.$refs.mapContainer.offsetWidth,
         height: this.$refs.mapContainer.offsetHeight,
-        backgroundColor: 0x808080, // szare tło
+        backgroundColor: 0x808080,
         antialias: true,
       });
 
       this.$refs.mapContainer.appendChild(this.app.canvas);
 
-      // Tworzenie kontenera dla mapy (wszystkie elementy będą w nim)
       this.mapContainer = new PIXI.Container({ scale: 1 });
       this.app.stage.addChild(this.mapContainer);
 
-      // Ładowanie assetów
       await this.loadAssets();
-
-      // Tworzenie mapy
       this.createMap();
 
-      // // Tworzenie punktów i połączeń
-      this.createConnections();
-      this.createPoints();
+      // Create points from store if data is already loaded
+      if (this.mapPointsStore.facilityData) {
+        this.createPointsFromStore();
+      }
 
-      // // Tworzenie robota
       this.createRobot();
-
-      // // Start animacji
-      this.startRobotMovement();
-
-      // Setup resize handling
       this.setupResize();
-
-      // Setup pan and zoom
       this.setupPanZoom();
     },
 
     async loadAssets() {
-      // Ładowanie assetów
       const map = await PIXI.Assets.load(MapImage);
       const robot = await PIXI.Assets.load(RobotImage);
       this.mapTexture = map;
       this.robotTexture = robot;
     },
 
-    async createFallbackTextures() {
-      // Fallback - tworzenie domyślnych tekstur
-      const graphics = new PIXI.Graphics();
-
-      // Mapa fallback
-      graphics.rect(0, 0, 800, 600).fill(0x34495e);
-      this.mapTexture = await this.app.renderer.generateTexture(graphics);
-
-      // Robot fallback
-      graphics.clear();
-      graphics.circle(0, 0, 10).fill(0xe74c3c);
-      this.robotTexture = await this.app.renderer.generateTexture(graphics);
-    },
-
     createMap() {
       if (this.mapTexture) {
         const mapSprite = PIXI.Sprite.from(this.mapTexture);
-        // Mapa ma stały rozmiar - nie resize do kontenera
         mapSprite.label = "map";
+        console.log(this.mapTexture);
         mapSprite.width = this.mapTexture.width;
         mapSprite.height = this.mapTexture.height;
+
         this.mapContainer.addChild(mapSprite);
       }
     },
 
-    createPoints() {
-      mockPoints.forEach((point) => {
-        // Tworzenie kółka punktu
+    createPointsFromStore() {
+      // Clear existing points
+      this.clearPoints();
+
+      this.mapPoints.forEach((point) => {
+        // Create circle for point
         const circle = new PIXI.Graphics();
         circle.circle(0, 0, 8).fill(0x000000);
         circle.x = point.x;
         circle.y = point.y;
+        circle.label = `point_${point.id}`;
         this.mapContainer.addChild(circle);
-        // Dodanie labelu
+
+        // Create label
         const label = new PIXI.BitmapText({
-          text: point.label,
+          text: point.name,
           position: { x: point.x, y: point.y },
           anchor: { x: -0.2, y: -0.2 },
           style: {
             fontName: "Arial",
-            fontSize: 20,
+            fontSize: 12,
             fill: "black",
           },
         });
-
+        label.label = `label_${point.id}`;
         this.mapContainer.addChild(label);
       });
     },
 
-    createConnections() {
-      mockConnections.forEach((connection) => {
-        const fromPoint = mockPoints.find((p) => p.id === connection.from);
-        const toPoint = mockPoints.find((p) => p.id === connection.to);
+    clearPoints() {
+      // Remove existing points and labels
+      const toRemove = this.mapContainer.children.filter(
+        (child) => child.label && (child.label.startsWith("point_") || child.label.startsWith("label_")),
+      );
+      toRemove.forEach((child) => this.mapContainer.removeChild(child));
+    },
 
-        if (fromPoint && toPoint) {
-          const line = new PIXI.Graphics();
-          line.moveTo(fromPoint.x, fromPoint.y).lineTo(toPoint.x, toPoint.y).stroke({ width: 2, color: 0x7f8c8d });
-
-          this.mapContainer.addChild(line);
-        }
-      });
+    updateMapPoints() {
+      if (this.app && this.mapContainer) {
+        this.createPointsFromStore();
+      }
     },
 
     createRobot() {
-      this.robotSprite = PIXI.Sprite.from(this.robotTexture);
-      this.robotSprite.anchor.set(0.5);
-      this.robotSprite.width = 100;
-      this.robotSprite.height = 55;
+      if (this.robotTexture && this.mapPoints.length > 0) {
+        this.robotSprite = PIXI.Sprite.from(this.robotTexture);
+        this.robotSprite.anchor.set(0.5, 0.5);
+        this.robotSprite.width = 20;
+        this.robotSprite.height = 20;
 
-      // Ustaw pozycję startową
-      const startPoint = mockPoints.find((p) => p.id === mockRobotPath[0]);
-      if (startPoint) {
-        this.robotSprite.x = startPoint.x;
-        this.robotSprite.y = startPoint.y;
+        // Start at first point
+        const firstPoint = this.mapPoints[0];
+        this.robotSprite.x = firstPoint.x;
+        this.robotSprite.y = firstPoint.y;
+
+        this.mapContainer.addChild(this.robotSprite);
       }
-
-      this.mapContainer.addChild(this.robotSprite);
-    },
-
-    startRobotMovement() {
-      this.moveToNextPoint();
-    },
-
-    moveToNextPoint() {
-      if (this.isMoving) return;
-
-      const nextIndex = (this.currentPathIndex + 1) % mockRobotPath.length;
-      const nextPointId = mockRobotPath[nextIndex];
-      const nextPoint = mockPoints.find((p) => p.id === nextPointId);
-
-      if (!nextPoint) return;
-
-      this.isMoving = true;
-      this.currentPathIndex = nextIndex;
-
-      // Animacja ruchu za pomocą Pixi Ticker
-      const startX = this.robotSprite.x;
-      const startY = this.robotSprite.y;
-      const targetX = nextPoint.x;
-      const targetY = nextPoint.y;
-
-      const duration = 2000; // 2 sekundy w ms
-      let elapsed = 0;
-
-      const animate = (delta) => {
-        elapsed += this.app.ticker.deltaMS;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function (ease in-out)
-        const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-        this.robotSprite.x = startX + (targetX - startX) * easeProgress;
-        this.robotSprite.y = startY + (targetY - startY) * easeProgress;
-
-        if (progress >= 1) {
-          this.app.ticker.remove(animate);
-          this.isMoving = false;
-          // Następny ruch po 1 sekundzie
-          setTimeout(() => this.moveToNextPoint(), 1000);
-        }
-      };
-
-      this.app.ticker.add(animate);
     },
 
     setupResize() {
-      // ResizeObserver dla dokładnego monitorowania zmian rozmiaru kontenera
-      this.resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-          this.handleResize();
-        }
+      this.resizeObserver = new ResizeObserver(() => {
+        this.handleResize();
       });
       this.resizeObserver.observe(this.$refs.mapContainer);
-
-      // Window resize jako backup
       window.addEventListener("resize", this.handleResize);
     },
 
@@ -233,17 +199,14 @@ export default {
       const containerWidth = this.$refs.mapContainer.offsetWidth;
       const containerHeight = this.$refs.mapContainer.offsetHeight;
 
-      // Sprawdź czy rozmiar rzeczywiście się zmienił
       if (containerWidth === this.app.screen.width && containerHeight === this.app.screen.height) {
         return;
       }
 
-      // Resize tylko aplikacji Pixi - mapa zachowuje stały rozmiar
       this.app.renderer.resize(containerWidth, containerHeight);
     },
 
     setupPanZoom() {
-      // Włącz interaktywność dla całego stage
       this.app.stage.eventMode = "static";
       this.app.stage.hitArea = this.app.screen;
 
@@ -256,21 +219,17 @@ export default {
         const pointer = { x: e.offsetX, y: e.offsetY };
         const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
 
-        // Zoom względem pozycji kursora
         const worldPos = {
           x: (pointer.x - this.mapContainer.x) / this.mapContainer.scale.x,
           y: (pointer.y - this.mapContainer.y) / this.mapContainer.scale.y,
         };
 
-        // Skaluj tylko mapę - punkty i robot automatycznie skalują się jako jej dzieci
         this.mapContainer.scale.x *= zoomFactor;
         this.mapContainer.scale.y *= zoomFactor;
 
-        // Ograniczenia zoom
         this.mapContainer.scale.x = Math.max(0.1, Math.min(3, this.mapContainer.scale.x));
         this.mapContainer.scale.y = Math.max(0.1, Math.min(3, this.mapContainer.scale.y));
 
-        // Przelicz pozycję kontenera po zoom
         this.mapContainer.x = pointer.x - worldPos.x * this.mapContainer.scale.x;
         this.mapContainer.y = pointer.y - worldPos.y * this.mapContainer.scale.y;
       });
@@ -312,6 +271,6 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
-  background: #808080; // szare tło
+  background: #808080;
 }
 </style>

@@ -3,8 +3,8 @@ import { defineStore } from "pinia";
 
 export const useMapStore = defineStore("map", () => {
   // Panel states
-  const leftPanelCollapsed = ref(false);
-  const rightPanelCollapsed = ref(false);
+  const leftPanelCollapsed = ref(true);
+  const rightPanelCollapsed = ref(true);
 
   // Panel widths
   const leftPanelWidth = ref(300);
