@@ -134,7 +134,7 @@ export default {
 }
 
 .side-panel {
-    background: linear-gradient(135deg, colors.$darkBlue 0%, lighten(colors.$darkBlue, 5%) 100%);
+    background: linear-gradient(135deg, colors.$darkBlue 0%, colors.$darkBlue, 100%);
     border: 2px solid colors.$lightBlue;
     border-radius: 8px;
     margin: 8px;
@@ -187,14 +187,12 @@ export default {
 
 .map-area {
     flex: 1;
-    background: linear-gradient(135deg, colors.$darkBlue 0%, darken(colors.$darkBlue, 10%) 100%);
     border: 2px solid colors.$lightBlue;
     border-radius: 8px;
     margin: 8px 4px;
     order: 2;
     position: relative;
     overflow: hidden;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .collapse-trigger-area {
@@ -224,7 +222,7 @@ export default {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
         &:hover {
-            background: lighten(colors.$lightBlue, 15%);
+            background: colors.$lightBlue;
             transform: translateY(-50%) scale(1.1);
             box-shadow: 0 4px 12px rgba(0, 154, 190, 0.6);
         }
@@ -265,7 +263,7 @@ export default {
     z-index: 999;
 
     &:hover {
-        background: lighten(colors.$lightBlue, 15%);
+        background: colors.$lightBlue;
         opacity: 1;
         transform: translateY(-50%) scale(1.1);
         box-shadow: 0 2px 8px rgba(0, 154, 190, 0.5);

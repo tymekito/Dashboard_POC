@@ -1,7 +1,6 @@
 <template>
     <div class="map-content">
-        <h2>Map Container</h2>
-        <p>Tutaj będzie mapa</p>
+        <h2>Map Container </h2>
     </div>
 </template>
 
@@ -16,6 +15,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@use "@/assets/styles/abstracts/_colors.module.scss" as colors;
+
 .map-content {
     width: 100%;
     height: 100%;
@@ -23,5 +24,7 @@ export default {
     align-items: center;
     justify-content: center;
     position: relative;
+    background: colors.$darkBlue;
+    color: colors.$white;
 }
 </style>
