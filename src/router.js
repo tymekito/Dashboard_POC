@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useAreaStore } from "@/stores/locallocal/area.js";
+import { useAreaStore } from "@/stores/local/area.js";
 import Map from "@/views/map/index.vue";
 
 const routes = [

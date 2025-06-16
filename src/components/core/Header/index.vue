@@ -16,7 +16,7 @@
 
 <script>
 import AppLogo from "@/assets/images/ESS-logo-white.svg";
-import { useAreaStore } from "@/stores/localarea.js";
+import { useAreaStore } from "@/stores/local/area.js";
 
 export default {
   name: "Header",

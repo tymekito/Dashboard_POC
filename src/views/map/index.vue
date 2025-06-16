@@ -75,6 +75,8 @@
 </template>
 
 <script>
+import { useMapPointsStore } from "@/stores/external/mapPoints.js";
+import { useAreaStore } from "@/stores/local/area";
 import { useMapStore } from "@/stores/local/map.js";
 import LeftPanel from "./components/LeftPanel/index.vue";
 import MapContent from "./components/MapContent/index.vue";
@@ -89,7 +91,12 @@ export default {
   },
   setup() {
     const mapStore = useMapStore();
-    return { mapStore };
+    const areaStore = useAreaStore();
+    const mapPointsStore = useMapPointsStore();
+    return { areaStore, mapStore, mapPointsStore };
+  },
+  async mounted() {
+    await this.mapPointsStore.fetchFacilityArea(this.areaStore.areaName);
   },
   data() {
     return {
