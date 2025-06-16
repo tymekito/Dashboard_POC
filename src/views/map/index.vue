@@ -35,7 +35,7 @@
     </div>
 
     <div class="map-area">
-      <MapContent />
+      <MapContent v-if="mapPointsStore.facilityData" />
     </div>
 
     <div

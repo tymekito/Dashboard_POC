@@ -35,7 +35,6 @@ export default {
   computed: {
     mapPoints() {
       if (!this.mapPointsStore.facilityData?.spots) return [];
-      console.log(this.mapPointsStore.facilityData.spots);
       return Object.entries(this.mapPointsStore.facilityData.spots).map(([key, spot]) => ({
         id: key,
         name: spot.name || key,
@@ -73,7 +72,6 @@ export default {
   methods: {
     // Convert world coordinates to pixel coordinates
     worldToPixel(worldX, worldY) {
-      console.log(this.originX, this.originY, this.mapResolution);
       const pixelX = (worldX + this.originX) / this.mapResolution;
       const pixelY = this.mapTexture.height - (worldY - this.originY) / this.mapResolution;
       return { x: pixelX, y: pixelY };
@@ -105,6 +103,8 @@ export default {
       this.createRobot();
       this.setupResize();
       this.setupPanZoom();
+      // // Start animacji
+      this.startRobotMovement();
     },
 
     async loadAssets() {
@@ -118,7 +118,6 @@ export default {
       if (this.mapTexture) {
         const mapSprite = PIXI.Sprite.from(this.mapTexture);
         mapSprite.label = "map";
-        console.log(this.mapTexture);
         mapSprite.width = this.mapTexture.width;
         mapSprite.height = this.mapTexture.height;
 
@@ -154,7 +153,49 @@ export default {
         this.mapContainer.addChild(label);
       });
     },
+    startRobotMovement() {
+      this.moveToNextPoint();
+    },
+    moveToNextPoint() {
+      if (this.isMoving) return;
 
+      this.currentPathIndex += 1;
+      const transition = this.mapPointsStore.facilityData.transitions[this.currentPathIndex];
+      const nextPointName = this.mapPointsStore.facilityData.spots.find((x) => x.id === transition.endSpotId).name;
+      const nextPoint = this.mapPoints.find((p) => p.name === nextPointName);
+      if (!transition) return;
+
+      this.isMoving = true;
+
+      // Animacja ruchu za pomocą Pixi Ticker
+      const startX = this.robotSprite.x;
+      const startY = this.robotSprite.y;
+      const targetX = nextPoint.x;
+      const targetY = nextPoint.y;
+
+      const duration = 2000; // 2 sekundy w ms
+      let elapsed = 0;
+
+      const animate = (delta) => {
+        elapsed += this.app.ticker.deltaMS;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function (ease in-out)
+        const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        this.robotSprite.x = startX + (targetX - startX) * easeProgress;
+        this.robotSprite.y = startY + (targetY - startY) * easeProgress;
+
+        if (progress >= 1) {
+          this.app.ticker.remove(animate);
+          this.isMoving = false;
+          // Następny ruch po 1 sekundzie
+          setTimeout(() => this.moveToNextPoint(), 1000);
+        }
+      };
+
+      this.app.ticker.add(animate);
+    },
     clearPoints() {
       // Remove existing points and labels
       const toRemove = this.mapContainer.children.filter(
@@ -173,8 +214,8 @@ export default {
       if (this.robotTexture && this.mapPoints.length > 0) {
         this.robotSprite = PIXI.Sprite.from(this.robotTexture);
         this.robotSprite.anchor.set(0.5, 0.5);
-        this.robotSprite.width = 20;
-        this.robotSprite.height = 20;
+        this.robotSprite.width = 100;
+        this.robotSprite.height = 50;
 
         // Start at first point
         const firstPoint = this.mapPoints[0];
