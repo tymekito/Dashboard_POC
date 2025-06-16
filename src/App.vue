@@ -1,10 +1,12 @@
 <template>
   <main class="main-component">
+    <AppHeader />
     <Map />
   </main>
 </template>
 
-<script setup lang="js">
+<script setup>
+import AppHeader from "@/components/core/Header/index.vue";
 import Map from "@/views/map/index.vue";
 </script>
 
