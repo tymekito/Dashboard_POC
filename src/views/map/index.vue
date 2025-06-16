@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { useMapStore } from "@/stores/map.js";
+import { useMapStore } from "@/stores/local/map.js";
 import LeftPanel from "./components/LeftPanel/index.vue";
 import MapContent from "./components/MapContent/index.vue";
 import RightPanel from "./components/RightPanel/index.vue";
