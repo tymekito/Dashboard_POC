@@ -36,8 +36,8 @@ export default {
     mapPoints() {
       if (!this.mapPointsStore.facilityData?.spots) return [];
       return Object.entries(this.mapPointsStore.facilityData.spots).map(([key, spot]) => ({
-        id: key,
-        name: spot.name || key,
+        id: spot.id,
+        name: spot.name,
         x: this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y).x,
         y: this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y).y,
         worldX: spot.entrance.position.x,
@@ -98,6 +98,7 @@ export default {
       // Create points from store if data is already loaded
       if (this.mapPointsStore.facilityData) {
         this.createPointsFromStore();
+        this.drawPaths();
       }
 
       this.createRobot();
@@ -207,7 +208,35 @@ export default {
     updateMapPoints() {
       if (this.app && this.mapContainer) {
         this.createPointsFromStore();
+        this.drawPaths();
       }
+    },
+    drawPaths() {
+      if (!this.mapPoints.length) return;
+
+      // Usuń istniejące ścieżki
+      this.clearPaths();
+
+      // Pobierz connections z mockData lub store
+      const connections = this.mapPointsStore.facilityData?.transitions || [];
+
+      connections.forEach((connection) => {
+        const fromPoint = this.mapPoints.find((p) => p.id == connection.startSpotId);
+        const toPoint = this.mapPoints.find((p) => p.id == connection.endSpotId);
+
+        if (fromPoint && toPoint) {
+          const line = new PIXI.Graphics();
+          line.moveTo(fromPoint.x, fromPoint.y).lineTo(toPoint.x, toPoint.y).stroke({ width: 2, color: 0x0066cc });
+
+          line.label = `path_${connection.from}_${connection.to}`;
+          this.mapContainer.addChild(line);
+        }
+      });
+    },
+
+    clearPaths() {
+      const toRemove = this.mapContainer.children.filter((child) => child.label && child.label.startsWith("path_"));
+      toRemove.forEach((child) => this.mapContainer.removeChild(child));
     },
 
     createRobot() {
