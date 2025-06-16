@@ -14,39 +14,58 @@ export default {
     const mapPointsStore = useMapPointsStore();
     return { mapPointsStore };
   },
+
   data() {
     return {
+      // PIXI App instance
       app: null,
+
+      // Textures and sprites
       mapTexture: null,
       robotTexture: null,
       robotSprite: null,
       mapSprite: null,
+
+      // Robot movement
       currentPathIndex: 0,
       isMoving: false,
+
+      // Map configuration
       mapResolution: 0.05,
       originX: 17.6,
       originY: -70,
-      resizeObserver: null,
+
+      // Container and interaction
       mapContainer: null,
       isDragging: false,
       lastPointerPosition: { x: 0, y: 0 },
+
+      // Observers
+      resizeObserver: null,
     };
   },
+
   computed: {
     mapPoints() {
       if (!this.mapPointsStore.facilityData?.spots) return [];
-      return Object.entries(this.mapPointsStore.facilityData.spots).map(([key, spot]) => ({
-        id: spot.id,
-        name: spot.name,
-        x: this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y).x,
-        y: this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y).y,
-        worldX: spot.entrance.position.x,
-        worldY: spot.entrance.position.y,
-        worldZ: spot.entrance.position.z,
-        orientation: spot.entrance.orientation,
-      }));
+
+      return Object.entries(this.mapPointsStore.facilityData.spots).map(([key, spot]) => {
+        const pixelCoords = this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y);
+
+        return {
+          id: spot.id,
+          name: spot.name,
+          x: pixelCoords.x,
+          y: pixelCoords.y,
+          worldX: spot.entrance.position.x,
+          worldY: spot.entrance.position.y,
+          worldZ: spot.entrance.position.z,
+          orientation: spot.entrance.orientation,
+        };
+      });
     },
   },
+
   watch: {
     "mapPointsStore.facilityData": {
       handler() {
@@ -57,27 +76,35 @@ export default {
       deep: true,
     },
   },
-  mounted() {
-    this.initPixi();
+
+  async mounted() {
+    await this.initPixi();
   },
+
   beforeUnmount() {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
-    window.removeEventListener("resize", this.handleResize);
-    if (this.app) {
-      this.app.destroy(true);
-    }
+    this.cleanup();
   },
+
   methods: {
-    // Convert world coordinates to pixel coordinates
+    // === COORDINATE CONVERSION ===
     worldToPixel(worldX, worldY) {
       const pixelX = (worldX + this.originX) / this.mapResolution;
       const pixelY = this.mapTexture.height - (worldY - this.originY) / this.mapResolution;
       return { x: pixelX, y: pixelY };
     },
 
+    // === INITIALIZATION ===
     async initPixi() {
+      await this.createApplication();
+      await this.loadAssets();
+      this.createMap();
+      this.handleInitialData();
+      this.createRobot();
+      this.setupInteractions();
+      this.startRobotMovement();
+    },
+
+    async createApplication() {
       this.app = new PIXI.Application();
 
       await this.app.init({
@@ -91,131 +118,167 @@ export default {
 
       this.mapContainer = new PIXI.Container({ scale: 1 });
       this.app.stage.addChild(this.mapContainer);
-
-      await this.loadAssets();
-      this.createMap();
-
-      // Create points from store if data is already loaded
-      if (this.mapPointsStore.facilityData) {
-        this.createPointsFromStore();
-        this.drawPaths();
-      }
-
-      this.createRobot();
-      this.setupResize();
-      this.setupPanZoom();
-      // // Start animacji
-      this.startRobotMovement();
     },
 
     async loadAssets() {
-      const map = await PIXI.Assets.load(MapImage);
-      const robot = await PIXI.Assets.load(RobotImage);
-      this.mapTexture = map;
-      this.robotTexture = robot;
+      const [mapTexture, robotTexture] = await Promise.all([PIXI.Assets.load(MapImage), PIXI.Assets.load(RobotImage)]);
+
+      this.mapTexture = mapTexture;
+      this.robotTexture = robotTexture;
     },
 
+    // === MAP CREATION ===
     createMap() {
-      if (this.mapTexture) {
-        const mapSprite = PIXI.Sprite.from(this.mapTexture);
-        mapSprite.label = "map";
-        mapSprite.width = this.mapTexture.width;
-        mapSprite.height = this.mapTexture.height;
+      if (!this.mapTexture) return;
 
-        this.mapContainer.addChild(mapSprite);
-      }
+      const mapSprite = PIXI.Sprite.from(this.mapTexture);
+      mapSprite.label = "map";
+      mapSprite.width = this.mapTexture.width;
+      mapSprite.height = this.mapTexture.height;
+
+      this.mapSprite = mapSprite;
+      this.mapContainer.addChild(mapSprite);
     },
 
-    createPointsFromStore() {
-      // Clear existing points
-      this.clearPoints();
-
-      this.mapPoints.forEach((point) => {
-        // Create circle for point
-        const circle = new PIXI.Graphics();
-        circle.circle(0, 0, 8).fill(0x000000);
-        circle.x = point.x;
-        circle.y = point.y;
-        circle.label = `point_${point.id}`;
-        this.mapContainer.addChild(circle);
-
-        // Create label
-        const label = new PIXI.BitmapText({
-          text: point.name,
-          position: { x: point.x, y: point.y },
-          anchor: { x: -0.2, y: -0.2 },
-          style: {
-            fontName: "Arial",
-            fontSize: 12,
-            fill: "black",
-          },
-        });
-        label.label = `label_${point.id}`;
-        this.mapContainer.addChild(label);
-      });
-    },
-    startRobotMovement() {
-      this.moveToNextPoint();
-    },
-    moveToNextPoint() {
-      if (this.isMoving) return;
-
-      this.currentPathIndex += 1;
-      const transition = this.mapPointsStore.facilityData.transitions[this.currentPathIndex];
-      const nextPointName = this.mapPointsStore.facilityData.spots.find((x) => x.id === transition.endSpotId).name;
-      const nextPoint = this.mapPoints.find((p) => p.name === nextPointName);
-      if (!transition) return;
-
-      this.isMoving = true;
-
-      // Animacja ruchu za pomocą Pixi Ticker
-      const startX = this.robotSprite.x;
-      const startY = this.robotSprite.y;
-      const targetX = nextPoint.x;
-      const targetY = nextPoint.y;
-
-      const duration = 2000; // 2 sekundy w ms
-      let elapsed = 0;
-
-      const animate = (delta) => {
-        elapsed += this.app.ticker.deltaMS;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function (ease in-out)
-        const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-        this.robotSprite.x = startX + (targetX - startX) * easeProgress;
-        this.robotSprite.y = startY + (targetY - startY) * easeProgress;
-
-        if (progress >= 1) {
-          this.app.ticker.remove(animate);
-          this.isMoving = false;
-          // Następny ruch po 1 sekundzie
-          setTimeout(() => this.moveToNextPoint(), 1000);
-        }
-      };
-
-      this.app.ticker.add(animate);
-    },
-    clearPoints() {
-      // Remove existing points and labels
-      const toRemove = this.mapContainer.children.filter(
-        (child) => child.label && (child.label.startsWith("point_") || child.label.startsWith("label_")),
-      );
-      toRemove.forEach((child) => this.mapContainer.removeChild(child));
-    },
-
-    updateMapPoints() {
-      if (this.app && this.mapContainer) {
-        this.createPointsFromStore();
+    // === POINTS MANAGEMENT ===
+    handleInitialData() {
+      if (this.mapPointsStore.facilityData) {
+        this.drawPoints();
         this.drawPaths();
       }
     },
-    drawPaths() {
-      if (!this.mapPoints.length) return;
 
-      // Usuń istniejące ścieżki
-      this.clearPaths();
+    drawPoints() {
+      this.clearExistingPoints();
+
+      this.mapPoints.forEach((point) => {
+        this.createPointSprite(point);
+      });
+    },
+
+    clearExistingPoints() {
+      const pointsToRemove = this.mapContainer.children.filter(
+        (child) => child.label && child.label.startsWith("point"),
+      );
+      pointsToRemove.forEach((point) => this.mapContainer.removeChild(point));
+    },
+
+    createPointSprite(point) {
+      const pointGraphics = new PIXI.Graphics();
+      pointGraphics.circle(0, 0, 8);
+      pointGraphics.fill(0xff0000);
+      pointGraphics.x = point.x;
+      pointGraphics.y = point.y;
+      pointGraphics.label = `point_${point.id}`;
+      pointGraphics.eventMode = "static";
+      pointGraphics.cursor = "pointer";
+      // Create label
+      const label = new PIXI.BitmapText({
+        text: point.name,
+        position: { x: point.x, y: point.y },
+        anchor: { x: -0.2, y: -0.2 },
+        style: {
+          fontName: "Arial",
+          fontSize: 12,
+          fill: "black",
+        },
+      });
+      label.label = `label_${point.id}`;
+
+      this.setupPointInteraction(pointGraphics, point);
+      this.mapContainer.addChild(pointGraphics);
+      this.mapContainer.addChild(label);
+    },
+
+    setupPointInteraction(pointGraphics, point) {
+      pointGraphics.on("pointerover", () => {
+        pointGraphics.clear();
+        pointGraphics.circle(0, 0, 10);
+        pointGraphics.fill(0x00ff00);
+      });
+
+      pointGraphics.on("pointerout", () => {
+        pointGraphics.clear();
+        pointGraphics.circle(0, 0, 8);
+        pointGraphics.fill(0xff0000);
+      });
+
+      pointGraphics.on("pointertap", () => {
+        console.log(`Clicked on point: ${point.name}`, point);
+      });
+    },
+
+    updateMapPoints() {
+      this.drawPoints();
+      this.drawPaths();
+    },
+
+    // === ROBOT MANAGEMENT ===
+    createRobot() {
+      if (!this.robotTexture || !this.mapPoints.length) return;
+
+      this.robotSprite = PIXI.Sprite.from(this.robotTexture);
+      this.robotSprite.anchor.set(0.5);
+      this.robotSprite.width = 110;
+      this.robotSprite.height = 50;
+      this.robotSprite.label = "robot";
+
+      const firstPoint = this.mapPoints[0];
+      this.robotSprite.x = firstPoint.x;
+      this.robotSprite.y = firstPoint.y;
+
+      this.mapContainer.addChild(this.robotSprite);
+    },
+
+    startRobotMovement() {
+      if (!this.robotSprite || this.mapPoints.length < 2) return;
+
+      this.moveRobotToNextPoint();
+    },
+
+    moveRobotToNextPoint() {
+      if (this.isMoving || !this.robotSprite) return;
+
+      const nextIndex = (this.currentPathIndex + 1) % this.mapPoints.length;
+      const targetPoint = this.mapPoints[nextIndex];
+
+      this.isMoving = true;
+
+      this.animateRobotToPoint(targetPoint, () => {
+        this.currentPathIndex = nextIndex;
+        this.isMoving = false;
+
+        setTimeout(() => this.moveRobotToNextPoint(), 2000);
+      });
+    },
+
+    animateRobotToPoint(targetPoint, onComplete) {
+      const startX = this.robotSprite.x;
+      const startY = this.robotSprite.y;
+      const duration = 3000;
+      const startTime = performance.now();
+
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = this.easeInOutQuad(progress);
+
+        this.robotSprite.x = startX + (targetPoint.x - startX) * easeProgress;
+        this.robotSprite.y = startY + (targetPoint.y - startY) * easeProgress;
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          onComplete?.();
+        }
+      };
+
+      requestAnimationFrame(animate);
+    },
+
+    // === PATH DRAWING ===
+    drawPaths() {
+      this.clearExistingPaths();
 
       // Pobierz connections z mockData lub store
       const connections = this.mapPointsStore.facilityData?.transitions || [];
@@ -234,25 +297,15 @@ export default {
       });
     },
 
-    clearPaths() {
-      const toRemove = this.mapContainer.children.filter((child) => child.label && child.label.startsWith("path_"));
-      toRemove.forEach((child) => this.mapContainer.removeChild(child));
+    clearExistingPaths() {
+      const pathsToRemove = this.mapContainer.children.filter((child) => child.label === "paths");
+      pathsToRemove.forEach((path) => this.mapContainer.removeChild(path));
     },
 
-    createRobot() {
-      if (this.robotTexture && this.mapPoints.length > 0) {
-        this.robotSprite = PIXI.Sprite.from(this.robotTexture);
-        this.robotSprite.anchor.set(0.5, 0.5);
-        this.robotSprite.width = 100;
-        this.robotSprite.height = 50;
-
-        // Start at first point
-        const firstPoint = this.mapPoints[0];
-        this.robotSprite.x = firstPoint.x;
-        this.robotSprite.y = firstPoint.y;
-
-        this.mapContainer.addChild(this.robotSprite);
-      }
+    // === INTERACTIONS SETUP ===
+    setupInteractions() {
+      this.setupResize();
+      this.setupPanZoom();
     },
 
     setupResize() {
@@ -260,87 +313,97 @@ export default {
         this.handleResize();
       });
       this.resizeObserver.observe(this.$refs.mapContainer);
+
       window.addEventListener("resize", this.handleResize);
-    },
-
-    handleResize() {
-      if (!this.app || !this.$refs.mapContainer) return;
-
-      const containerWidth = this.$refs.mapContainer.offsetWidth;
-      const containerHeight = this.$refs.mapContainer.offsetHeight;
-
-      if (containerWidth === this.app.screen.width && containerHeight === this.app.screen.height) {
-        return;
-      }
-
-      this.app.renderer.resize(containerWidth, containerHeight);
     },
 
     setupPanZoom() {
       this.app.stage.eventMode = "static";
       this.app.stage.hitArea = this.app.screen;
 
-      // Mouse wheel zoom
-      this.app.canvas.addEventListener("wheel", (e) => {
-        e.preventDefault();
+      this.app.stage.on("pointerdown", this.onDragStart);
+      this.app.stage.on("pointermove", this.onDragMove);
+      this.app.stage.on("pointerup", this.onDragEnd);
+      this.app.stage.on("pointerupoutside", this.onDragEnd);
+      this.app.stage.on("wheel", this.onWheel);
+    },
 
-        if (!this.mapContainer || this.mapContainer.children.length === 0) return;
+    // === EVENT HANDLERS ===
+    handleResize() {
+      if (!this.app || !this.$refs.mapContainer) return;
 
-        const pointer = { x: e.offsetX, y: e.offsetY };
-        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      this.app.renderer.resize(this.$refs.mapContainer.offsetWidth, this.$refs.mapContainer.offsetHeight);
+    },
 
-        const worldPos = {
-          x: (pointer.x - this.mapContainer.x) / this.mapContainer.scale.x,
-          y: (pointer.y - this.mapContainer.y) / this.mapContainer.scale.y,
-        };
+    onDragStart(event) {
+      this.isDragging = true;
+      this.lastPointerPosition = {
+        x: event.global.x,
+        y: event.global.y,
+      };
+    },
 
-        this.mapContainer.scale.x *= zoomFactor;
-        this.mapContainer.scale.y *= zoomFactor;
+    onDragMove(event) {
+      if (!this.isDragging) return;
 
-        this.mapContainer.scale.x = Math.max(0.1, Math.min(3, this.mapContainer.scale.x));
-        this.mapContainer.scale.y = Math.max(0.1, Math.min(3, this.mapContainer.scale.y));
+      const deltaX = event.global.x - this.lastPointerPosition.x;
+      const deltaY = event.global.y - this.lastPointerPosition.y;
 
-        this.mapContainer.x = pointer.x - worldPos.x * this.mapContainer.scale.x;
-        this.mapContainer.y = pointer.y - worldPos.y * this.mapContainer.scale.y;
-      });
+      this.mapContainer.x += deltaX;
+      this.mapContainer.y += deltaY;
 
-      // Mouse drag pan
-      this.app.stage.on("pointerdown", (e) => {
-        this.isDragging = true;
-        this.lastPointerPosition = { x: e.globalX, y: e.globalY };
-      });
+      this.lastPointerPosition = {
+        x: event.global.x,
+        y: event.global.y,
+      };
+    },
 
-      this.app.stage.on("pointermove", (e) => {
-        if (this.isDragging) {
-          const deltaX = e.globalX - this.lastPointerPosition.x;
-          const deltaY = e.globalY - this.lastPointerPosition.y;
+    onDragEnd() {
+      this.isDragging = false;
+    },
 
-          this.mapContainer.x += deltaX;
-          this.mapContainer.y += deltaY;
+    onWheel(event) {
+      event.preventDefault();
 
-          this.lastPointerPosition = { x: e.globalX, y: e.globalY };
-        }
-      });
+      const scaleFactor = event.deltaY > 0 ? 0.9 : 1.1;
+      const newScale = this.mapContainer.scale.x * scaleFactor;
 
-      this.app.stage.on("pointerup", () => {
-        this.isDragging = false;
-      });
+      if (newScale < 0.1 || newScale > 5) return;
 
-      this.app.stage.on("pointerupoutside", () => {
-        this.isDragging = false;
-      });
+      const mousePosition = this.app.stage.toLocal(event.global);
+
+      this.mapContainer.scale.set(newScale);
+
+      const newMousePosition = this.app.stage.toLocal(event.global);
+      this.mapContainer.x += (mousePosition.x - newMousePosition.x) * newScale;
+      this.mapContainer.y += (mousePosition.y - newMousePosition.y) * newScale;
+    },
+
+    // === UTILITY FUNCTIONS ===
+    easeInOutQuad(t) {
+      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    },
+
+    // === CLEANUP ===
+    cleanup() {
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect();
+      }
+
+      window.removeEventListener("resize", this.handleResize);
+
+      if (this.app) {
+        this.app.destroy(true);
+      }
     },
   },
 };
 </script>
 
 <style scoped lang="scss">
-@use "@/assets/styles/abstracts/_colors.module.scss" as colors;
-
 .map-content {
   width: 100%;
   height: 100%;
-  position: relative;
-  background: #808080;
+  overflow: hidden;
 }
 </style>

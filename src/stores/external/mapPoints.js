@@ -9,7 +9,7 @@ export const useMapPointsStore = defineStore("mapPoints", () => {
   async function fetchFacilityArea(areaName) {
     loading.value = true;
     try {
-      facilityData.value = await mapPointsController.getAreaMapPoints("Polipak");
+      facilityData.value = await mapPointsController.getAreaMapPoints(areaName);
     } finally {
       loading.value = false;
     }

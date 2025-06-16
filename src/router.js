@@ -5,7 +5,7 @@ import Map from "@/views/map/index.vue";
 const routes = [
   {
     path: "/",
-    redirect: "/area/DeafultAreaMap",
+    redirect: "/area/Polipak",
   },
   {
     path: "/area/:nazwa",

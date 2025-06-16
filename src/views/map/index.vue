@@ -35,7 +35,7 @@
     </div>
 
     <div class="map-area">
-      <MapContent v-if="mapPointsStore.facilityData" />
+      <MapContent v-if="mapPointsStore.facilityData && areaStore.areaName" />
     </div>
 
     <div
@@ -96,7 +96,7 @@ export default {
     return { areaStore, mapStore, mapPointsStore };
   },
   async mounted() {
-    await this.mapPointsStore.fetchFacilityArea(this.areaStore.areaName);
+    await this.mapPointsStore.fetchFacilityArea("Polipak");
   },
   data() {
     return {
