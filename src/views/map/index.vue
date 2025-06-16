@@ -152,10 +152,11 @@ export default {
 
 <style scoped lang="scss">
 @use "@/assets/styles/abstracts/_colors.module.scss" as colors;
+@use "@/assets/styles/abstracts/_sizes.scss" as sizes;
 
 .map-container {
   display: flex;
-  height: 100vh;
+  height: calc(100dvh - sizes.$header);
   background-color: colors.$darkBlue;
 }
 
@@ -271,7 +272,7 @@ export default {
   left: -10px;
 
   .collapse-button {
-    left: -15px;
+    left: -3px;
   }
 }
 
@@ -300,7 +301,7 @@ export default {
   }
 
   &.left-handle {
-    left: -6px;
+    left: 3px;
   }
 
   &::before {

@@ -3,6 +3,11 @@
     <div class="header-left">
       <img :src="AppLogo" width="150" height="50" />
     </div>
+    <div class="header-middle">
+      <div v-if="areaStore.areaName" class="area-name">
+        {{ areaStore.areaName }}
+      </div>
+    </div>
     <div class="header-right">
       {{ currentDateTime }}
     </div>
@@ -11,9 +16,14 @@
 
 <script>
 import AppLogo from "@/assets/images/ESS-logo-white.svg";
+import { useAreaStore } from "@/stores/area.js";
 
 export default {
   name: "Header",
+  setup() {
+    const areaStore = useAreaStore();
+    return { areaStore };
+  },
   data() {
     return {
       currentDateTime: "",
@@ -47,8 +57,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-@use "@/assets/styles/abstracts/_sizes.scss" as sizes;
 @use "@/assets/styles/abstracts/_colors.module.scss" as colors;
+@use "@/assets/styles/abstracts/_sizes.scss" as sizes;
 
 .app-header {
   display: flex;
@@ -57,12 +67,23 @@ export default {
   padding: 0 2rem;
   background-color: colors.$darkBlue;
   color: white;
-  height: 60px;
+  height: sizes.$header;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   .header-left {
     display: flex;
     align-items: center;
+    gap: 2rem;
+  }
+  .header-middle {
+    .area-name {
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: 600;
+      font-size: 1.6rem;
+      color: colors.$white;
+      text-transform: capitalize;
+    }
   }
 
   .header-right {
