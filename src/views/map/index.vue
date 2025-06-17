@@ -36,6 +36,7 @@
 
     <div class="map-area">
       <MapContent v-if="mapPointsStore.facilityData && areaStore.areaName" />
+      <BottomPanel />
     </div>
 
     <div
@@ -78,6 +79,7 @@
 import { useMapPointsStore } from "@/stores/external/mapPoints.js";
 import { useAreaStore } from "@/stores/local/area";
 import { useMapStore } from "@/stores/local/map.js";
+import BottomPanel from "./components/BottomPanel/index.vue";
 import LeftPanel from "./components/LeftPanel/index.vue";
 import MapContent from "./components/MapContent/index.vue";
 import RightPanel from "./components/RightPanel/index.vue";
@@ -88,6 +90,7 @@ export default {
     MapContent,
     LeftPanel,
     RightPanel,
+    BottomPanel,
   },
   setup() {
     const mapStore = useMapStore();

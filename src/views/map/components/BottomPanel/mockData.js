@@ -1,0 +1,61 @@
+// mockData.js dla BottomPanel - dane legendy elementów mapy
+export const legendData = {
+  items: [
+    {
+      id: "robots",
+      name: "Roboty",
+      color: "#4CAF50",
+      icon: "🤖",
+      visible: true,
+      description: "Autonomiczne roboty mobilne",
+    },
+    {
+      id: "waypoints",
+      name: "Punkty nawigacyjne",
+      color: "#2196F3",
+      icon: "📍",
+      visible: true,
+      description: "Punkty siatki nawigacyjnej",
+    },
+    {
+      id: "paths",
+      name: "Ścieżki",
+      color: "#FF9800",
+      icon: "➡️",
+      visible: true,
+      description: "Połączenia między punktami",
+    },
+    {
+      id: "stations",
+      name: "Stacje ładowania",
+      color: "#9C27B0",
+      icon: "🔋",
+      visible: true,
+      description: "Miejsca ładowania robotów",
+    },
+    {
+      id: "obstacles",
+      name: "Przeszkody",
+      color: "#F44336",
+      icon: "🚫",
+      visible: true,
+      description: "Elementy blokujące przejście",
+    },
+    {
+      id: "zones",
+      name: "Strefy robocze",
+      color: "#607D8B",
+      icon: "🔲",
+      visible: true,
+      description: "Wyznaczone obszary działania",
+    },
+    {
+      id: "missions",
+      name: "Aktywne misje",
+      color: "#CDDC39",
+      icon: "🎯",
+      visible: true,
+      description: "Trasy wykonywanych zadań",
+    },
+  ],
+};
