@@ -1,19 +1,24 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useAreaStore } from "@/stores/local/area.js";
-import Map from "@/views/map/index.vue";
+import Config from "@/app.config.js";
+import { useAreaDataStore } from "@/stores/common/areaData/store.js";
+import DashboardMap from "@/views/dashboard/index.vue";
 
 const routes = [
   {
     path: "/",
-    redirect: "/area/Polipak",
+    redirect: "/area",
+  },
+  {
+    path: "/area",
+    redirect: () => `/area/${Config.defaultArea()}`,
   },
   {
     path: "/area/:nazwa",
-    name: "Dashboard Map",
-    component: Map,
+    name: "DashboardMap",
+    component: DashboardMap,
     beforeEnter: (to) => {
-      const mapStore = useAreaStore();
-      mapStore.setAreaName(to.params.nazwa);
+      const areaDataStore = useAreaDataStore();
+      areaDataStore.setAreaName(to.params.nazwa);
     },
   },
 ];

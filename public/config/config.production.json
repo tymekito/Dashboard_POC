@@ -1,0 +1,5 @@
+{
+  "defaultArea": "defaultAreaName",
+  "apiURL": "http://localhost:7402/api/v1/",
+  "appV1Url": "http://localhost:8080/"
+}

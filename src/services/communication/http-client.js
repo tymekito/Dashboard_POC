@@ -1,48 +1,76 @@
 import Config from "@/app.config.js";
+import { HTTP_OPERATIONS } from "@/services/communication/constants.js";
+import { displayError, displaySuccess } from "@/services/notiffications/notification-service.js";
+import { translationFormatter } from "@/services/translations/translation-service.js";
+import { useLoaderStore } from "@/stores/core/loader/store.js";
 import axios from "axios";
 import qs from "qs";
 
-const api = axios.create({
-  baseURL: Config.apiURL,
-});
+let api = null;
+
+export function createHTTPClientInstance() {
+  api = axios.create({
+    baseURL: Config.apiURL(),
+  });
+
+  api.interceptors.request.use(
+    (config) => {
+      const loaderStore = useLoaderStore();
+      loaderStore.incrementPendingRequestCount();
+      return config;
+    },
+    (error) => Promise.reject(error),
+  );
+
+  api.interceptors.response.use(
+    (response) => {
+      const loaderStore = useLoaderStore();
+      loaderStore.decrementPendingRequestCount();
+      displaySuccess(translationFormatter("notifications.error"));
+
+      return response;
+    },
+    async (error) => {
+      const loaderStore = useLoaderStore();
+      loaderStore.decrementPendingRequestCount();
+      return Promise.reject(error);
+    },
+  );
+}
+
+function showResultMessage(operation) {
+  const loaderStore = useLoaderStore();
+  if (loaderStore.displaySuccessMessage === true) {
+    const message = getSuccessMessage(operation);
+    displaySuccess(message);
+  }
+}
 
 function showExceptionMessage(error) {
-  console.error(getErrorMessage(error));
+  const message = getErrorMessage(error);
+  displayError(message);
+}
+
+function getSuccessMessage(operation) {
+  switch (operation) {
+    case HTTP_OPERATIONS.POST:
+    case HTTP_OPERATIONS.PUT:
+    case HTTP_OPERATIONS.PATCH:
+    case HTTP_OPERATIONS.DELETE:
+      return translationFormatter("notifications.success");
+    default:
+      return translationFormatter("notifications.unsupported-operation");
+  }
 }
 
 function getErrorMessage(error) {
-  if (!error.response) {
-    return getServerErrorMessage(error);
-  }
   switch (error.response.status) {
     case 404:
-      return "not_found";
-    case 408:
-      return "timeout";
+      return translationFormatter("notifications.resource-not-found");
     default:
-      return error.response.data.Message ? error.response.data.Message : "error_message";
+      return error.response.data.Message ? error.response.data.Message : translationFormatter("notifications.error");
   }
 }
-
-function getServerErrorMessage(error) {
-  return error.message;
-}
-
-api.interceptors.request.use(
-  (config) => {
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
-
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  async (error) => {
-    return Promise.reject(error);
-  },
-);
 
 const client = {
   async get(resource, params = {}, handleError = true) {
@@ -54,7 +82,7 @@ const client = {
       return await api.get(resource, config);
     } catch (e) {
       if (handleError) {
-        getErrorMessage(e);
+        showExceptionMessage(e);
       } else {
         throw e;
       }
@@ -75,17 +103,15 @@ const client = {
       }
     }
   },
-  async post(resource, data, params, handleError = true, handleTimeout = true) {
+  async post(resource, data, params, handleError = true) {
     const config = {
       params,
     };
     try {
-      return await api.post(resource, data, config);
+      var result = await api.post(resource, data, config);
+      showResultMessage(HTTP_OPERATIONS.POST);
+      return result;
     } catch (e) {
-      if (handleTimeout && e.response && e.response.status === 408) {
-        showExceptionMessage(e);
-        return e.response;
-      }
       if (handleError) {
         showExceptionMessage(e);
       } else {
@@ -100,6 +126,7 @@ const client = {
     };
     try {
       result.data = await api.post(resource, data, config);
+      showResultMessage(HTTP_OPERATIONS.POST);
     } catch (exception) {
       result.succeed = false;
       result.exception = exception;
@@ -115,7 +142,9 @@ const client = {
       params,
     };
     try {
-      return await api.put(resource, data, config);
+      var result = await api.put(resource, data, config);
+      showResultMessage(HTTP_OPERATIONS.PUT);
+      return result;
     } catch (e) {
       if (handleError) {
         showExceptionMessage(e);
@@ -129,7 +158,9 @@ const client = {
       params,
     };
     try {
-      return await api.patch(resource, data, config);
+      var result = await api.patch(resource, data, config);
+      showResultMessage(HTTP_OPERATIONS.PATCH);
+      return result;
     } catch (e) {
       if (handleError) {
         showExceptionMessage(e);
@@ -143,7 +174,9 @@ const client = {
       params,
     };
     try {
-      return await api.delete(resource, config);
+      var result = await api.delete(resource, config);
+      showResultMessage(HTTP_OPERATIONS.DELETE);
+      return result;
     } catch (e) {
       if (handleError) {
         showExceptionMessage(e);

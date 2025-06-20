@@ -1,0 +1,8 @@
+{
+  "notifications": {
+    "error": "Coś chyba poszło nie tak! Spróbuj ponownie później, lub skontaktuj się z administratorem!",
+    "resource-not-found": "Nie znaleziono zasobu!",
+    "success": "Operacja zakończona powodzeniem.",
+    "unsupported-operation": "Nieobsługiwana operacja!"
+  }
+}

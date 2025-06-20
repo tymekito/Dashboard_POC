@@ -11,11 +11,14 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@kyvg/vue3-notification": "^3.4.1",
     "axios": "^1.10.0",
+    "i18n": "^0.15.1",
     "pinia": "^3.0.1",
     "pixi.js": "^8.10.1",
     "qs": "^6.14.0",
     "vue": "^3.5.13",
+    "vue-i18n": "^11.1.6",
     "vue-router": "^4.5.1",
     "vuetify": "^3.8.9"
   },
