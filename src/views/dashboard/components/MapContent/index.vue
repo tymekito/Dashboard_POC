@@ -56,10 +56,9 @@ export default {
       return "cursor: default";
     },
     mapPoints() {
-      console.log(this.areaDataStore.areaMapPoints);
       if (!this.areaDataStore.areaMapPoints?.spots) return [];
 
-      return Object.entries(this.areaDataStore.areaMapPoints.spots).map(([key, spot]) => {
+      return Object.entries(this.areaDataStore.areaMapPoints.spots).map(([_, spot]) => {
         const pixelCoords = this.worldToPixel(spot.entrance.position.x, spot.entrance.position.y);
 
         return {
@@ -89,7 +88,7 @@ export default {
 
   async mounted() {
     await this.initPixi();
-    // await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
+    await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
   },
 
   beforeUnmount() {
@@ -237,11 +236,11 @@ export default {
       });
       label.label = `label_${point.id}`;
 
-      // this.setupPointInteraction(pointGraphics, point);
+      // this.setupPointInteraction(pointGraphics);
       this.mapContainer.addChild(label);
     },
 
-    setupPointInteraction(pointGraphics, point) {
+    setupPointInteraction(pointGraphics) {
       pointGraphics.on("pointerover", () => {
         pointGraphics.clear();
         pointGraphics.circle(0, 0, 10);
@@ -252,10 +251,6 @@ export default {
         pointGraphics.clear();
         pointGraphics.circle(0, 0, 8);
         pointGraphics.fill(0xff0000);
-      });
-
-      pointGraphics.on("pointertap", () => {
-        console.log(`Clicked on point: ${point.name}`, point);
       });
     },
 
@@ -335,8 +330,8 @@ export default {
       const connections = this.areaDataStore.areaMapPoints?.transitions || [];
 
       connections.forEach((connection) => {
-        const fromPoint = this.mapPoints.find((p) => p.id == connection.startSpotId);
-        const toPoint = this.mapPoints.find((p) => p.id == connection.endSpotId);
+        const fromPoint = this.mapPoints.find((p) => p.id === connection.startSpotId);
+        const toPoint = this.mapPoints.find((p) => p.id === connection.endSpotId);
 
         if (fromPoint && toPoint) {
           const line = new PIXI.Graphics();

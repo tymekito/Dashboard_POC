@@ -9,7 +9,6 @@ export const useAreaDataStore = defineStore("area", {
 
   actions: {
     async getAreaMapPoints(areaName) {
-      console.log(areaName);
       this.areaMapPoints = await mapPointsController.getAreaMapPoints(areaName);
     },
     setAreaName(name) {

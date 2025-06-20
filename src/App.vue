@@ -1,7 +1,9 @@
 <template>
   <main class="main-component">
     <AppHeader />
-    <DashboardMap />
+    <router-view v-slot="{ Component }">
+      <component :is="Component" :key="$route.path" />
+    </router-view>
     <notifications position="bottom right" />
     <Loader />
   </main>
@@ -10,7 +12,6 @@
 <script setup>
 import AppHeader from "@/components/core/Header/index.vue";
 import Loader from "@/components/core/Loader/index.vue";
-import DashboardMap from "@/views/dashboard/index.vue";
 </script>
 
 <style lang="scss" src="@/assets/styles/default/default.scss" />

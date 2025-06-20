@@ -6,7 +6,7 @@ export function displaySuccess(message, title = "Success") {
     type: "success",
     title,
     text: message,
-    duration: 30000,
+    duration: 3000,
     position: "bottom",
   });
 }
@@ -16,7 +16,7 @@ export function displayError(message, title = "Error") {
     type: "error",
     title,
     text: message,
-    duration: 50000,
+    duration: 5000,
     position: "bottom",
   });
 }
@@ -26,7 +26,7 @@ export function displayInfo(message, title = "Info") {
     type: "info",
     title,
     text: message,
-    duration: 30000,
+    duration: 3000,
     position: "bottom",
   });
 }
@@ -36,7 +36,7 @@ export function displayWarning(message, title = "Warning") {
     type: "warn",
     title,
     text: message,
-    duration: 40000,
+    duration: 4000,
     position: "bottom",
   });
 }

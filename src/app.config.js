@@ -34,7 +34,6 @@ export async function loadConfig() {
 
 const Config = {
   apiURL: () => getEnvironmentVariable("apiURL"),
-  defaultArea: () => getEnvironmentVariable("defaultArea"),
   appV1Url: () => getEnvironmentVariable("appV1Url"),
 };
 

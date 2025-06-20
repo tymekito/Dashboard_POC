@@ -10,7 +10,7 @@
 import { useLoaderStore } from "@/stores/core/loader/store.js";
 
 export default {
-  name: "Loader",
+  name: "SpinLoader",
   setup() {
     const loaderStore = useLoaderStore();
 
@@ -41,7 +41,6 @@ export default {
   padding: 3rem;
   border-radius: 0.75rem;
   text-align: center;
-  box-shadow: 0 0.25rem 0.375rem colors.$blackAlfa20;
 }
 
 .spinner {

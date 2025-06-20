@@ -4,5 +4,12 @@
     "resource-not-found": "Nie znaleziono zasobu!",
     "success": "Operacja zakończona powodzeniem.",
     "unsupported-operation": "Nieobsługiwana operacja!"
+  },
+  "views": {
+    "dashboard-selector": {
+      "title": "Wybierz obszar",
+      "search": "Wyszukaj obszar",
+      "confirm": "Zatwierdź"
+    }
   }
 }
