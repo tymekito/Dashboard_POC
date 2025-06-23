@@ -7,6 +7,7 @@ import { useAreaDataStore } from "@/stores/common/areaData/store.js";
 import * as PIXI from "pixi.js";
 import MapImage from "./files/map.png";
 import RobotImage from "./files/robot.png";
+import { mockAreas } from "./mockDataArea.js";
 
 export default {
   name: "MapContent",
@@ -30,11 +31,6 @@ export default {
       currentPathIndex: 0,
       isMoving: false,
 
-      // Map configuration
-      mapResolution: 0.05,
-      originX: 17.6,
-      originY: -70,
-
       // Container and interaction
       mapContainer: null,
       isDragging: false,
@@ -49,6 +45,15 @@ export default {
   },
 
   computed: {
+    mapResolution() {
+      return mockAreas.find((x) => x.name === this.areaDataStore.areaName).mapResolution;
+    },
+    originX() {
+      return mockAreas.find((x) => x.name === this.areaDataStore.areaName).originX;
+    },
+    originY() {
+      return mockAreas.find((x) => x.name === this.areaDataStore.areaName).originY;
+    },
     cursorStyle() {
       if (this.isDragging) {
         return "cursor: grabbing";
@@ -96,27 +101,6 @@ export default {
   },
 
   methods: {
-    cullElements() {
-      if (this.cullThrottle) return;
-      this.cullThrottle = requestAnimationFrame(() => {
-        const bounds = this.getVisibleBounds();
-
-        this.mapContainer.children.forEach((child) => {
-          if (child.label?.startsWith("point") || child.label?.startsWith("label")) {
-            const isVisible = this.isElementVisible(child, bounds);
-            child.visible = isVisible;
-
-            if (isVisible) {
-              this.visibleElements.add(child);
-            } else {
-              this.visibleElements.delete(child);
-            }
-          }
-        });
-
-        this.cullThrottle = null;
-      });
-    },
     getVisibleBounds() {
       const padding = 100; // buffer
       return {
@@ -151,7 +135,6 @@ export default {
 
     async createApplication() {
       this.app = new PIXI.Application();
-
       await this.app.init({
         width: this.$refs.mapContainer.offsetWidth,
         height: this.$refs.mapContainer.offsetHeight,
@@ -163,7 +146,12 @@ export default {
 
       this.$refs.mapContainer.appendChild(this.app.canvas);
 
-      this.mapContainer = new PIXI.Container({ scale: 1 });
+      this.mapContainer = new PIXI.Container({
+        scale: 1,
+        isRenderGroup: true,
+        cullable: true,
+        eventMode: "passive",
+      });
       this.app.stage.addChild(this.mapContainer);
     },
 
@@ -212,15 +200,14 @@ export default {
 
     createPointSprite(point) {
       if (!this.pointsContainer) {
-        this.pointsContainer = new PIXI.Container();
+        this.pointsContainer = new PIXI.Container({ isRenderGroup: true, cullable: true, cullableChildren: false });
         this.mapContainer.addChild(this.pointsContainer);
       }
-
-      const pointGraphics = new PIXI.Graphics();
-      pointGraphics.circle(0, 0, 8);
-      pointGraphics.fill(0xff0000);
+      const context = new PIXI.GraphicsContext().circle(0, 0, 8).fill("red");
+      const pointGraphics = new PIXI.Graphics(context, {
+        label: `point_${point.id}`,
+      });
       pointGraphics.position.set(point.x, point.y);
-      pointGraphics.label = `point_${point.id}`;
 
       this.pointsContainer.addChild(pointGraphics);
       // Create label
@@ -236,12 +223,13 @@ export default {
       });
       label.label = `label_${point.id}`;
 
-      // this.setupPointInteraction(pointGraphics);
-      this.mapContainer.addChild(label);
+      this.setupPointInteraction(pointGraphics);
+      this.pointsContainer.addChild(label);
     },
 
     setupPointInteraction(pointGraphics) {
       pointGraphics.on("pointerover", () => {
+        console.log(pointGraphics);
         pointGraphics.clear();
         pointGraphics.circle(0, 0, 10);
         pointGraphics.fill(0x00ff00);
@@ -392,26 +380,16 @@ export default {
     },
 
     onDragMove(event) {
-      this.cullElements();
       if (!this.isDragging) return;
 
-      // Throttle do 60fps
-      if (this.dragThrottle) return;
-      this.dragThrottle = true;
-      requestAnimationFrame(() => {
-        const deltaX = event.global.x - this.lastPointerPosition.x;
-        const deltaY = event.global.y - this.lastPointerPosition.y;
+      const deltaX = event.global.x - this.lastPointerPosition.x;
+      const deltaY = event.global.y - this.lastPointerPosition.y;
 
-        this.mapContainer.x += deltaX;
-        this.mapContainer.y += deltaY;
+      this.mapContainer.x += deltaX;
+      this.mapContainer.y += deltaY;
 
-        this.lastPointerPosition = {
-          x: event.global.x,
-          y: event.global.y,
-        };
-
-        this.dragThrottle = false;
-      });
+      this.lastPointerPosition = { x: event.global.x, y: event.global.y };
+      console.log("XD");
     },
 
     onDragEnd() {

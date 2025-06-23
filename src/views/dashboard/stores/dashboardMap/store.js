@@ -2,8 +2,8 @@ import { defineStore } from "pinia";
 
 export const useDashboardStore = defineStore("dashboardMap", {
   state: () => ({
-    leftPanelCollapsed: false,
-    rightPanelCollapsed: false,
+    leftPanelCollapsed: true,
+    rightPanelCollapsed: true,
     leftPanelWidth: 300,
     rightPanelWidth: 300,
     mapCenter: [0, 0],
