@@ -8,6 +8,7 @@
 
 <script>
 import RobotTile from "./components/RobotTile.vue";
+import { LAYOUT_CONFIG } from "./constants.js";
 import { generateRobots } from "./files/mockData.js";
 
 export default {
@@ -18,89 +19,115 @@ export default {
 
   data() {
     return {
-      robots: null,
-      availableHeight: 0,
-      availableWidth: 0,
+      robots: [],
+      dimensions: {
+        height: 0,
+        width: 0,
+      },
       resizeObserver: null,
-      minTileHeightInPx: 75,
+      minTileHeight: LAYOUT_CONFIG.MIN_TILE_HEIGHT,
+      maxTileHeight: LAYOUT_CONFIG.MAX_TILE_HEIGHT,
     };
   },
 
   computed: {
-    layoutCalculation() {
-      const robotCount = this.robots.length;
-      if (robotCount === 0 || this.availableHeight === 0) {
-        return { tileHeight: this.minTileHeightInPx, columns: 1 };
-      }
-
-      const gap = 8;
-      const availableHeightForTiles = this.availableHeight;
-
-      // calc best layout for tile amount and panel size
-      let bestLayout = { tileHeight: 75, columns: 1 };
-
-      const maxColumns = Math.min(10, Math.ceil(robotCount / 2));
-
-      for (let columns = 1; columns <= maxColumns; columns++) {
-        const tilesPerColumn = Math.ceil(robotCount / columns);
-        const requiredHeight = tilesPerColumn * this.minTileHeightInPx + tilesPerColumn * gap;
-
-        if (requiredHeight <= availableHeightForTiles) {
-          const maxTileHeight = (availableHeightForTiles - tilesPerColumn * gap) / tilesPerColumn;
-          bestLayout = {
-            tileHeight: Math.max(this.minTileHeightInPx, maxTileHeight),
-            columns: columns,
-          };
-          break;
-        }
-      }
-
-      return bestLayout;
-    },
-
     tileHeight() {
-      return this.layoutCalculation.tileHeight;
+      return this.layoutData.tileHeight;
     },
 
     tileWidth() {
-      return (this.availableWidth - 12) / this.layoutCalculation.columns;
+      const { columns } = this.layoutData;
+      const columnGap = columns > 1 ? LAYOUT_CONFIG.TILE_GAP : 0;
+      return (this.dimensions.width - columnGap) / columns;
     },
 
-    numberOfColumns() {
-      return this.layoutCalculation.columns;
+    layoutData() {
+      const { height } = this.dimensions;
+      const robotCount = this.robots.length;
+
+      if (!robotCount || !height) {
+        return this.getDefaultLayout();
+      }
+
+      return this.calculateOptimalLayout(robotCount, height);
     },
   },
 
   methods: {
-    calculateAvailableDimensions() {
+    getDefaultLayout() {
+      return {
+        tileHeight: this.maxTileHeight,
+        columns: 1,
+      };
+    },
+
+    calculateOptimalLayout(robotCount, availableHeight) {
+      const maxColumns = Math.min(LAYOUT_CONFIG.MAX_COLUMNS, Math.ceil(robotCount / 2));
+
+      for (let columns = 1; columns <= maxColumns; columns++) {
+        const layout = this.tryLayoutWithColumns(robotCount, availableHeight, columns);
+        if (layout) return layout;
+      }
+
+      return this.getDefaultLayout();
+    },
+
+    tryLayoutWithColumns(robotCount, availableHeight, columns) {
+      const tilesPerColumn = Math.ceil(robotCount / columns);
+      const requiredHeight = this.calculateRequiredHeight(tilesPerColumn);
+
+      if (requiredHeight > availableHeight) {
+        return null;
+      }
+
+      const tileHeight = this.calculateTileHeight(availableHeight, tilesPerColumn);
+      return { tileHeight, columns };
+    },
+
+    calculateRequiredHeight(tilesPerColumn) {
+      return tilesPerColumn * (this.minTileHeight + LAYOUT_CONFIG.TILE_GAP);
+    },
+
+    calculateTileHeight(availableHeight, tilesPerColumn) {
+      const maxPossibleHeight = (availableHeight - tilesPerColumn * LAYOUT_CONFIG.TILE_GAP) / tilesPerColumn;
+      return Math.max(this.minTileHeight, Math.min(maxPossibleHeight, LAYOUT_CONFIG.MAX_TILE_HEIGHT));
+    },
+
+    updateDimensions() {
       this.$nextTick(() => {
-        const robotsList = this.$refs.robotsList;
-        if (robotsList) {
-          this.availableHeight = robotsList.clientHeight;
-          this.availableWidth = robotsList.clientWidth;
-        }
+        const container = this.$refs.robotsList;
+        if (!container) return;
+
+        this.dimensions = {
+          height: container.clientHeight,
+          width: container.clientWidth,
+        };
+        this.minTileHeight = Math.max(
+          container.clientHeight / LAYOUT_CONFIG.DYNAMIC_HEIGHT_DIVIDER - LAYOUT_CONFIG.TILE_GAP,
+          LAYOUT_CONFIG.MIN_TILE_HEIGHT,
+        );
       });
+    },
+
+    initializeResizeObserver() {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.updateDimensions();
+      });
+
+      if (this.$refs.robotsList) {
+        this.resizeObserver.observe(this.$refs.robotsList);
+      }
     },
   },
 
   mounted() {
-    // init mock data
-    this.robots = generateRobots(18);
-
-    this.calculateAvailableDimensions();
-    this.resizeObserver = new ResizeObserver(() => {
-      this.calculateAvailableDimensions();
-    });
-
-    if (this.$refs.robotsList) {
-      this.resizeObserver.observe(this.$refs.robotsList);
-    }
+    this.robots = generateRobots(LAYOUT_CONFIG.AMOUNT_OF_ROBOTS);
+    this.updateDimensions();
+    this.initializeResizeObserver();
   },
 
   beforeUnmount() {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
+    this.resizeObserver?.disconnect();
   },
 };
 </script>
@@ -108,18 +135,19 @@ export default {
 <style scoped lang="scss">
 @use "@/assets/styles/abstracts/_colors.module.scss" as colors;
 
+$tileGap: 0.6rem;
 .left-panel-container {
   height: 100%;
 }
 
 .robots-list {
   height: 100%;
+  width: 100%;
   overflow: hidden;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  align-content: center;
+  flex-direction: column;
+  gap: $tileGap;
   align-items: flex-start;
-  justify-content: center;
 }
 </style>

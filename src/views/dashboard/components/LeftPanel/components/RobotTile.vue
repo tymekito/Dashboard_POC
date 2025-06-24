@@ -116,7 +116,7 @@ export default {
     },
 
     missionStartTime() {
-      return this.robot.missionStartTime ? this.formatElapsedTime(this.robot.missionStartTime) : "";
+      return this.robot.missionStartTime ? this.formatStartTime(this.robot.missionStartTime) : "";
     },
 
     actionIcon() {
@@ -171,7 +171,19 @@ export default {
       const hours = Math.floor(elapsedSeconds / 3600);
       const minutes = Math.floor((elapsedSeconds % 3600) / 60);
 
-      return [hours, minutes].map((value) => value.toString().padStart(2, "0")).join(":");
+      if (hours === 0) {
+        return `${minutes} m`;
+      }
+
+      return `${hours}:${minutes.toString().padStart(2, "0")} h`;
+    },
+
+    formatStartTime(startTime) {
+      const date = new Date(startTime);
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+
+      return `${hours}:${minutes}`;
     },
   },
 };
@@ -181,7 +193,7 @@ export default {
 @use "@/assets/styles/abstracts/_colors.module.scss" as colors;
 
 $tile-height: 25px;
-$icon-size: 25px;
+$icon-size: 23px;
 $battery-width: 32px;
 $battery-height: 16px;
 $battery-terminal-width: 2px;
@@ -242,6 +254,7 @@ $battery-terminal-offset: 3px;
   justify-content: space-evenly;
   gap: 1rem;
   height: 50%;
+  margin-top: 0.1rem;
 }
 
 .icon-wrapper {
@@ -339,6 +352,7 @@ $battery-terminal-offset: 3px;
   justify-content: space-evenly;
   gap: 1rem;
   height: 50%;
+  padding-bottom: 0.1rem;
 }
 
 .action-icon {

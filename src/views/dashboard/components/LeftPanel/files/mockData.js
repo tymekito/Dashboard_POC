@@ -17,7 +17,7 @@ export function generateRobots(count) {
         isConnected: Math.random() > 0.2,
         currentAction: hasAction ? actions[Math.floor(Math.random() * (actions.length - 1))] : null,
         missionStartTime: hasAction ? new Date(Date.now() - Math.random() * 600000) : null,
-        missionExecutionTime: hasAction ? new Date(Date.now() - Math.random() * 600000) : null,
+        missionExecutionTime: hasAction ? new Date(Date.now() - Math.random() * 60000000) : null,
         isOperational: Math.random() > 0.1,
       }),
     );
