@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Battery outline -->
+  <rect x="16" y="24" width="28" height="16" fill="#F7FAFC" stroke="#4A5568" stroke-width="2" rx="2"/>
+  
+  <!-- Battery terminal -->
+  <rect x="44" y="30" width="4" height="4" fill="#4A5568" rx="1"/>
+  
+  <!-- Battery charge level -->
+  <rect x="18" y="26" width="6" height="12" fill="#48BB78" rx="1"/>
+  <rect x="26" y="26" width="6" height="12" fill="#48BB78" rx="1"/>
+  <rect x="34" y="26" width="6" height="12" fill="#68D391" rx="1"/>
+  
+  <!-- Lightning bolt/charging symbol -->
+  <path d="M28 8 L24 18 L30 18 L26 28 L32 18 L26 18 Z" fill="#F6E05E" stroke="#D69E2E" stroke-width="1"/>
+  
+  <!-- Charging cable/plug -->
+  <path d="M32 42 Q32 48 38 48 Q44 48 44 42" stroke="#4A5568" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="36" y="46" width="4" height="6" fill="#4A5568" rx="1"/>
+  
+  <!-- Energy waves -->
+  <path d="M12 20 Q16 16 20 20" stroke="#F6E05E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M10 24 Q14 20 18 24" stroke="#F6E05E" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M8 28 Q12 24 16 28" stroke="#F6E05E" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

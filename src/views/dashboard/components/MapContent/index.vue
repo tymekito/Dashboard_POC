@@ -93,7 +93,6 @@ export default {
 
   async mounted() {
     await this.initPixi();
-    await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
   },
 
   beforeUnmount() {
@@ -203,7 +202,7 @@ export default {
         this.pointsContainer = new PIXI.Container({ isRenderGroup: true, cullable: true, cullableChildren: false });
         this.mapContainer.addChild(this.pointsContainer);
       }
-      const context = new PIXI.GraphicsContext().circle(0, 0, 8).fill("red");
+      const context = new PIXI.GraphicsContext().circle(0, 0, 4).fill("red");
       const pointGraphics = new PIXI.Graphics(context, {
         label: `point_${point.id}`,
       });
@@ -217,29 +216,13 @@ export default {
         anchor: { x: -0.2, y: -0.2 },
         style: {
           fontName: "Arial",
-          fontSize: 12,
+          fontSize: 10,
           fill: "black",
         },
       });
       label.label = `label_${point.id}`;
 
-      this.setupPointInteraction(pointGraphics);
       this.pointsContainer.addChild(label);
-    },
-
-    setupPointInteraction(pointGraphics) {
-      pointGraphics.on("pointerover", () => {
-        console.log(pointGraphics);
-        pointGraphics.clear();
-        pointGraphics.circle(0, 0, 10);
-        pointGraphics.fill(0x00ff00);
-      });
-
-      pointGraphics.on("pointerout", () => {
-        pointGraphics.clear();
-        pointGraphics.circle(0, 0, 8);
-        pointGraphics.fill(0xff0000);
-      });
     },
 
     updateMapPoints() {
@@ -249,6 +232,7 @@ export default {
 
     // === ROBOT MANAGEMENT ===
     createRobot() {
+      console.log(this.robotTexture, this.mapPoints.length);
       if (!this.robotTexture || !this.mapPoints.length) return;
 
       this.robotSprite = PIXI.Sprite.from(this.robotTexture);
@@ -265,6 +249,8 @@ export default {
     },
 
     startRobotMovement() {
+      console.log(this.robotTexture, this.mapPoints.length);
+
       if (!this.robotSprite || this.mapPoints.length < 2) return;
 
       this.moveRobotToNextPoint();
@@ -377,23 +363,29 @@ export default {
         x: event.global.x,
         y: event.global.y,
       };
+      this.pointsContainer.interactiveChildren = false;
     },
 
     onDragMove(event) {
       if (!this.isDragging) return;
 
-      const deltaX = event.global.x - this.lastPointerPosition.x;
-      const deltaY = event.global.y - this.lastPointerPosition.y;
+      // Throttle do 16ms (~60fps)
+      if (this.dragThrottle) return;
+      this.dragThrottle = requestAnimationFrame(() => {
+        const deltaX = event.global.x - this.lastPointerPosition.x;
+        const deltaY = event.global.y - this.lastPointerPosition.y;
 
-      this.mapContainer.x += deltaX;
-      this.mapContainer.y += deltaY;
+        this.mapContainer.x += deltaX;
+        this.mapContainer.y += deltaY;
+        this.lastPointerPosition = { x: event.global.x, y: event.global.y };
 
-      this.lastPointerPosition = { x: event.global.x, y: event.global.y };
-      console.log("XD");
+        this.dragThrottle = null;
+      });
     },
 
     onDragEnd() {
       this.isDragging = false;
+      this.pointsContainer.interactiveChildren = true;
     },
 
     onWheel(event) {
@@ -421,7 +413,6 @@ export default {
     // === CLEANUP ===
     cleanup() {
       if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
-      if (this.resizeFrame) cancelAnimationFrame(this.resizeFrame);
       if (this.resizeObserver) {
         this.resizeObserver.disconnect();
       }

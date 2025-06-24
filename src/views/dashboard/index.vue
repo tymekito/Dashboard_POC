@@ -27,7 +27,7 @@
 
     <!-- Map Area -->
     <div class="map-area">
-      <MapContent v-if="areaDataStore.areaName" />
+      <MapContent v-if="areaDataStore.areaName && areaDataStore.areaMapPoints?.spots" />
     </div>
 
     <!-- Right Panel -->
@@ -98,9 +98,10 @@ export default {
     },
   },
 
-  mounted() {
+  async mounted() {
     document.addEventListener("mousemove", this.doResize, { passive: true });
     document.addEventListener("mouseup", this.stopResize);
+    await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
   },
 
   beforeUnmount() {
@@ -186,6 +187,7 @@ export default {
 .left-panel {
   order: 1;
   margin-right: 0.25rem;
+  height: inherit;
 }
 
 .right-panel {
@@ -193,8 +195,9 @@ export default {
   margin-left: 0.25rem;
 }
 
+$panelHeaderHeight: 3.75rem;
 .panel-header {
-  height: 3.75rem;
+  height: $panelHeaderHeight;
   border-bottom: 0.125rem solid colors.$lightBlue;
   background: colors.$lightBlue;
   display: flex;
@@ -210,8 +213,9 @@ export default {
 }
 
 .panel-content {
-  padding: 1.25rem;
+  padding: 0 1.25rem 0 1.25rem;
   color: colors.$white;
+  height: calc(100% - $panelHeaderHeight);
 }
 
 .map-area {
