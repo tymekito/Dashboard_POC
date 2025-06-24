@@ -49,7 +49,7 @@ import PauseIcon from "@/assets/icons/pause-icon.svg";
 import PlayIcon from "@/assets/icons/play-icon.svg";
 import WifiIcon from "@/assets/icons/wifi-icon.svg";
 import WifiOffIcon from "@/assets/icons/wifi-off-icon.svg";
-import { RobotAction, BatteryStatus, BatteryThreshold, IconType } from "../files/constants";
+import { RobotAction, BatteryStatus, BatteryThreshold, IconType } from "./constants";
 
 const ICONS = {
   [IconType.BATTERY_CHARGING]: BatteryChargingIcon,

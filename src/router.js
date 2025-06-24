@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useAreaDataStore } from "@/stores/common/areaData/store.js";
+import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
 
 const router = createRouter({
   history: createWebHistory(),

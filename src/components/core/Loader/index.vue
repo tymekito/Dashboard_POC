@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { useLoaderStore } from "@/stores/core/loader/store.js";
+import { useLoaderStore } from "@/stores/common/loader/store.js";
 
 export default {
   name: "SpinLoader",

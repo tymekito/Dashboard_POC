@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { useAreaDataStore } from "@/stores/common/areaData/store.js";
+import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
 import AppDateTime from "./components/AppDateTime/index.vue";
 import AppLogo from "./components/AppLogo/index.vue";
 import AppReturnButton from "./components/AppReturnButton/index.vue";

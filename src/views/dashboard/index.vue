@@ -24,7 +24,7 @@
 
     <!-- Map Area -->
     <div class="map-area">
-      <MapContent v-if="areaDataStore.areaName" />
+      <MapContent v-if="areaDataStore.areaName && areaDataStore.areaMapPoints?.spots" />
     </div>
 
     <!-- Right Panel -->
@@ -52,7 +52,7 @@
 </template>
 
 <script>
-import { useAreaDataStore } from "@/stores/common/areaData/store.js";
+import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
 import LeftPanel from "./components/LeftPanel/index.vue";
 import MapContent from "./components/MapContent/index.vue";
 import RightPanel from "./components/RightPanel/index.vue";
@@ -92,9 +92,10 @@ export default {
     },
   },
 
-  mounted() {
+  async mounted() {
     document.addEventListener("mousemove", this.doResize, { passive: true });
     document.addEventListener("mouseup", this.stopResize);
+    await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
   },
 
   beforeUnmount() {
