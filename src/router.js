@@ -1,4 +1,3 @@
-// src/router.js - zaktualizowana wersja
 import { createRouter, createWebHistory } from "vue-router";
 import { useAreaDataStore } from "@/stores/common/areaData/store.js";
 
@@ -15,12 +14,12 @@ const router = createRouter({
       component: () => import("@/views/dashboadSelector/index.vue"),
     },
     {
-      path: "/area/:nazwa",
+      path: "/area/:name",
       name: "DashboardMap",
       component: () => import("@/views/dashboard/index.vue"),
       beforeEnter: (to) => {
         const areaDataStore = useAreaDataStore();
-        areaDataStore.setAreaName(to.params.nazwa);
+        areaDataStore.setAreaName(to.params.name);
       },
     },
   ],

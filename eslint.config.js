@@ -29,7 +29,6 @@ export default defineConfig([
   js.configs.recommended,
   ...pluginVue.configs["flat/essential"],
 
-  // Twoje custom reguły
   {
     rules: {
       "linebreak-style": 0,

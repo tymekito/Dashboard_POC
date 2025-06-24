@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "AreaText",
+  name: "AppText",
   props: {
     areaName: { type: String, default: "" },
   },

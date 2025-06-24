@@ -1,0 +1,9 @@
+// src/views/dashboard/components/RightPanel/constants.js
+
+export const LAYOUT_CONFIG = {
+  MIN_TILE_HEIGHT: 75,
+  MAX_TILE_HEIGHT: 125,
+  TILE_GAP: 6,
+  DYNAMIC_HEIGHT_DIVIDER: 10,
+  MAX_ITEMS: 10,
+};

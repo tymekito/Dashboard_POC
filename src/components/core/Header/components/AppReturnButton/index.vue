@@ -1,5 +1,5 @@
 <template>
-  <button class="back-button" @click="handleBackClick" aria-label="Wróć do poprzedniej aplikacji">
+  <button class="back-button" @click="handleBackClick">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"

@@ -6,9 +6,6 @@
       :class="{ collapsed: dashboardStore.leftPanelCollapsed, resizing: isResizing && currentPanel === 'left' }"
       :style="{ width: leftPanelWidth }"
     >
-      <div class="panel-header">
-        <span v-if="!dashboardStore.leftPanelCollapsed" class="panel-title">Left Panel</span>
-      </div>
       <div class="panel-content" v-if="!dashboardStore.leftPanelCollapsed">
         <LeftPanel />
       </div>
@@ -27,7 +24,7 @@
 
     <!-- Map Area -->
     <div class="map-area">
-      <MapContent v-if="areaDataStore.areaName && areaDataStore.areaMapPoints?.spots" />
+      <MapContent v-if="areaDataStore.areaName" />
     </div>
 
     <!-- Right Panel -->
@@ -36,9 +33,6 @@
       :class="{ collapsed: dashboardStore.rightPanelCollapsed, resizing: isResizing && currentPanel === 'right' }"
       :style="{ width: rightPanelWidth }"
     >
-      <div class="panel-header">
-        <span v-if="!dashboardStore.rightPanelCollapsed" class="panel-title">Right Panel</span>
-      </div>
       <div class="panel-content" v-if="!dashboardStore.rightPanelCollapsed">
         <RightPanel />
       </div>
@@ -98,10 +92,9 @@ export default {
     },
   },
 
-  async mounted() {
+  mounted() {
     document.addEventListener("mousemove", this.doResize, { passive: true });
     document.addEventListener("mouseup", this.stopResize);
-    await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
   },
 
   beforeUnmount() {
@@ -165,6 +158,7 @@ export default {
 
 .side-panel {
   font-size: 1.2rem;
+  height: calc(100% - 1rem) !important;
   background: linear-gradient(135deg, colors.$darkBlue 0%, colors.$darkBlue 100%);
   border: 0.125rem solid colors.$lightBlue;
   border-radius: 0.5rem;
@@ -195,27 +189,10 @@ export default {
   margin-left: 0.25rem;
 }
 
-$panelHeaderHeight: 3.75rem;
-.panel-header {
-  height: $panelHeaderHeight;
-  border-bottom: 0.125rem solid colors.$lightBlue;
-  background: colors.$lightBlue;
-  display: flex;
-  align-items: center;
-  padding: 0 0.9375rem;
-  border-radius: 0.375rem 0.375rem 0 0;
-
-  .panel-title {
-    color: colors.$white;
-    font-weight: 600;
-    font-size: 2rem;
-  }
-}
-
 .panel-content {
-  padding: 0 1.25rem 0 1.25rem;
+  padding: 0.75rem;
   color: colors.$white;
-  height: calc(100% - $panelHeaderHeight);
+  height: 100%;
 }
 
 .map-area {

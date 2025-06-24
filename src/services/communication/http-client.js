@@ -26,8 +26,6 @@ export function createHTTPClientInstance() {
     (response) => {
       const loaderStore = useLoaderStore();
       loaderStore.decrementPendingRequestCount();
-      displaySuccess(translationFormatter("notifications.error"));
-
       return response;
     },
     async (error) => {
