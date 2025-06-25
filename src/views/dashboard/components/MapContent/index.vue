@@ -204,8 +204,8 @@ export default {
     // === POINTS MANAGEMENT ===
     handleInitialData() {
       if (this.areaDataStore.areaMapPoints) {
-        this.drawPoints();
         this.drawPaths();
+        this.drawPoints();
       }
     },
 
@@ -236,20 +236,6 @@ export default {
       pointGraphics.position.set(point.x, point.y);
 
       this.pointsContainer.addChild(pointGraphics);
-
-      const label = new PIXI.BitmapText({
-        text: point.name,
-        position: { x: point.x, y: point.y },
-        anchor: { x: -0.2, y: -0.2 },
-        style: {
-          fontName: "Arial",
-          fontSize: 10,
-          fill: "black",
-        },
-      });
-      label.label = `label_${point.id}`;
-
-      this.pointsContainer.addChild(label);
     },
 
     updateMapPoints() {
