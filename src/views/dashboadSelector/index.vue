@@ -233,7 +233,6 @@ export default {
   overflow-y: auto;
   transition: none;
   background: transparent !important;
-  padding: 0 1rem 0 0 !important;
 
   .area-item {
     background-color: colors.$whiteAlfa05 !important;

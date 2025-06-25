@@ -53,6 +53,7 @@
 
 <script>
 import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
+import { useRobotStore } from "@/stores/common/dashboard/robots/store.js";
 import LeftPanel from "./components/LeftPanel/index.vue";
 import MapContent from "./components/MapContent/index.vue";
 import RightPanel from "./components/RightPanel/index.vue";
@@ -74,6 +75,7 @@ export default {
     return {
       areaDataStore: useAreaDataStore(),
       dashboardStore: useDashboardStore(),
+      robotStore: useRobotStore(),
     };
   },
   data: () => ({
@@ -96,6 +98,7 @@ export default {
     document.addEventListener("mousemove", this.doResize, { passive: true });
     document.addEventListener("mouseup", this.stopResize);
     await this.areaDataStore.getAreaMapPoints(this.areaDataStore.areaName);
+    await this.robotStore.getAllRobots();
   },
 
   beforeUnmount() {

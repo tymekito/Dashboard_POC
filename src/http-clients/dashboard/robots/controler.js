@@ -3,6 +3,6 @@ import { generateRobots } from "./mockData.js";
 
 export const robotsControler = {
   async getAllRobots() {
-    return generateRobots(15);
+    return generateRobots(1);
   },
 };

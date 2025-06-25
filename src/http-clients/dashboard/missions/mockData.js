@@ -30,7 +30,7 @@ export function generateMissions(count = 15) {
   const baseTime = new Date();
   baseTime.setHours(8, 0, 0, 0); // Start at 8:00 AM
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 1; i <= count; i++) {
     const createdOffset = i * 30; // Every 30 minutes
     const startOffset = createdOffset + 15 + Math.floor(Math.random() * 15); // 15-30 minutes after creation
 

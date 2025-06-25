@@ -4,6 +4,7 @@
 
 <script>
 import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
+import { useRobotStore } from "@/stores/common/dashboard/robots/store.js";
 import * as PIXI from "pixi.js";
 import MapImage from "./files/map.png";
 import RobotImage from "./files/robot.png";
@@ -13,8 +14,9 @@ export default {
   name: "MapContent",
   setup() {
     const areaDataStore = useAreaDataStore();
+    const robotStore = useRobotStore();
 
-    return { areaDataStore };
+    return { areaDataStore, robotStore };
   },
   data() {
     return {
@@ -24,23 +26,24 @@ export default {
       // Textures and sprites
       mapTexture: null,
       robotTexture: null,
-      robotSprite: null,
+      robotSprites: [], // Array robotów zamiast pojedynczego
       mapSprite: null,
-
-      // Robot movement
-      currentPathIndex: 0,
-      isMoving: false,
 
       // Container and interaction
       mapContainer: null,
+      pointsContainer: null,
+      cargoContainer: null, // Nowy kontener dla ładunków
       isDragging: false,
       lastPointerPosition: { x: 0, y: 0 },
 
-      // Observers
+      // Observers and utilities
       resizeObserver: null,
+      resizeTimeout: null,
+      dragThrottle: null,
       originalCursor: null,
       visibleElements: new Set(),
       cullThrottle: null,
+      pathGenerationInterval: null,
     };
   },
 
@@ -54,11 +57,17 @@ export default {
     originY() {
       return mockAreas.find((x) => x.name === this.areaDataStore.areaName).originY;
     },
+    transitions() {
+      return this.areaDataStore.areaMapPoints?.transitions || [];
+    },
     cursorStyle() {
       if (this.isDragging) {
         return "cursor: grabbing";
       }
       return "cursor: default";
+    },
+    robotCount() {
+      return this.robotStore.robots.length;
     },
     mapPoints() {
       if (!this.areaDataStore.areaMapPoints?.spots) return [];
@@ -85,6 +94,22 @@ export default {
       handler() {
         if (this.areaDataStore.areaMapPoints && this.app) {
           this.updateMapPoints();
+          this.startPathGeneration();
+        }
+      },
+      deep: true,
+    },
+    robotCount: {
+      handler(newCount, oldCount) {
+        if (this.app && newCount !== oldCount) {
+          this.updateRobots();
+        }
+      },
+    },
+    "robotStore.robots": {
+      handler() {
+        if (this.app) {
+          this.updateRobotsCargo();
         }
       },
       deep: true,
@@ -101,7 +126,7 @@ export default {
 
   methods: {
     getVisibleBounds() {
-      const padding = 100; // buffer
+      const padding = 100;
       return {
         left: -this.mapContainer.x / this.mapContainer.scale.x - padding,
         right: (-this.mapContainer.x + this.app.screen.width) / this.mapContainer.scale.x + padding,
@@ -109,11 +134,13 @@ export default {
         bottom: (-this.mapContainer.y + this.app.screen.height) / this.mapContainer.scale.y + padding,
       };
     },
+
     isElementVisible(element, bounds) {
       return (
         element.x >= bounds.left && element.x <= bounds.right && element.y >= bounds.top && element.y <= bounds.bottom
       );
     },
+
     // === COORDINATE CONVERSION ===
     worldToPixel(worldX, worldY) {
       const pixelX = (worldX + this.originX) / this.mapResolution;
@@ -127,9 +154,9 @@ export default {
       await this.loadAssets();
       this.createMap();
       this.handleInitialData();
-      this.createRobot();
+      this.updateRobots();
       this.setupInteractions();
-      this.startRobotMovement();
+      this.startPathGeneration();
     },
 
     async createApplication() {
@@ -209,7 +236,7 @@ export default {
       pointGraphics.position.set(point.x, point.y);
 
       this.pointsContainer.addChild(pointGraphics);
-      // Create label
+
       const label = new PIXI.BitmapText({
         text: point.name,
         position: { x: point.x, y: point.y },
@@ -231,48 +258,180 @@ export default {
     },
 
     // === ROBOT MANAGEMENT ===
-    createRobot() {
+    updateRobots() {
+      this.clearRobots();
+      this.createRobots();
+      this.startAllRobotsMovement();
+    },
+
+    clearRobots() {
+      this.robotSprites.forEach((robot) => {
+        if (robot.sprite) {
+          this.mapContainer.removeChild(robot.sprite);
+        }
+        // Usuń również ładunek
+        if (robot.cargoSprites && robot.cargoSprites.length > 0) {
+          robot.cargoSprites.forEach((cargo) => {
+            this.mapContainer.removeChild(cargo);
+          });
+        }
+      });
+      this.robotSprites = [];
+    },
+
+    createRobots() {
       if (!this.robotTexture || !this.mapPoints.length) return;
 
-      this.robotSprite = PIXI.Sprite.from(this.robotTexture);
-      this.robotSprite.anchor.set(0.5);
-      this.robotSprite.width = 110;
-      this.robotSprite.height = 50;
-      this.robotSprite.label = "robot";
+      const robotCount = this.robotCount;
 
-      const firstPoint = this.mapPoints[0];
-      this.robotSprite.x = firstPoint.x;
-      this.robotSprite.y = firstPoint.y;
+      for (let i = 1; i <= robotCount; i++) {
+        const robotData = this.robotStore.robots.find((x) => x.id === i);
+        const robotSprite = PIXI.Sprite.from(this.robotTexture);
+        robotSprite.anchor.set(0.5);
+        robotSprite.width = 110;
+        robotSprite.height = 50;
+        robotSprite.label = `robot_${i}`;
 
-      this.mapContainer.addChild(this.robotSprite);
+        // Różne pozycje startowe - rozmieść roboty równomiernie
+        const startPointIndex = i % this.mapPoints.length;
+        const startPoint = this.mapPoints[startPointIndex];
+        robotSprite.x = startPoint.x;
+        robotSprite.y = startPoint.y;
+
+        this.mapContainer.addChild(robotSprite);
+
+        const robotObj = {
+          sprite: robotSprite,
+          id: i,
+          robotData: robotData,
+          nextPoint: null,
+          isMoving: false,
+          cargoSprites: [], // Array dla sprite'ów ładunków
+        };
+
+        // Stwórz ładunki dla robota
+        this.createCargoSprites(robotObj);
+
+        this.robotSprites.push(robotObj);
+      }
     },
 
-    startRobotMovement() {
-      if (!this.robotSprite || this.mapPoints.length < 2) return;
+    // === CARGO MANAGEMENT ===
+    createCargoSprites(robot) {
+      const cargoCount = robot.robotData.cargoCount || 0;
+      robot.cargoSprites = [];
 
-      this.moveRobotToNextPoint();
+      if (cargoCount === 0) return;
+
+      // Jeden sprite ładunku z cyferką całkowitej ilości
+      const cargoContainer = new PIXI.Container();
+
+      // Brązowy kwadrat dla ładunku
+      const cargoBox = new PIXI.Graphics();
+      cargoBox.rect(-12, -12, 24, 24);
+      cargoBox.fill(0x8b4513); // Brązowy kolor
+      cargoBox.stroke({ width: 2, color: 0x654321 });
+
+      // Cyfra z ilością ładunków
+      const cargoText = new PIXI.BitmapText({
+        text: cargoCount.toString(),
+        style: {
+          fontSize: 14,
+          fill: 0xffffff,
+          fontWeight: "bold",
+          align: "center",
+        },
+      });
+      cargoText.anchor.set(0.5);
+
+      cargoContainer.addChild(cargoBox);
+      cargoContainer.addChild(cargoText);
+      cargoContainer.label = `cargo_${robot.id}`;
+
+      // Pozycja ładunku za robotem
+      cargoContainer.x = robot.sprite.x - 35;
+      cargoContainer.y = robot.sprite.y;
+
+      this.mapContainer.addChild(cargoContainer);
+      robot.cargoSprites.push(cargoContainer);
     },
 
-    moveRobotToNextPoint() {
-      if (this.isMoving || !this.robotSprite) return;
+    updateRobotsCargo() {
+      this.robotSprites.forEach((robot) => {
+        const robotData = this.robotStore.robots.find((r) => r.id === robot.robotData.id);
+        if (robotData && robotData.cargoCount !== robot.robotData.cargoCount) {
+          // Usuń stary ładunek
+          robot.cargoSprites.forEach((cargo) => {
+            this.mapContainer.removeChild(cargo);
+          });
+          robot.cargoSprites = [];
 
-      const nextIndex = (this.currentPathIndex + 1) % this.mapPoints.length;
-      const targetPoint = this.mapPoints[nextIndex];
-
-      this.isMoving = true;
-
-      this.animateRobotToPoint(targetPoint, () => {
-        this.currentPathIndex = nextIndex;
-        this.isMoving = false;
-
-        setTimeout(() => this.moveRobotToNextPoint(), 2000);
+          // Zaktualizuj dane robota
+          robot.robotData = robotData;
+          // Stwórz nowy ładunek
+          this.createCargoSprites(robot);
+        }
       });
     },
 
-    animateRobotToPoint(targetPoint, onComplete) {
-      const startX = this.robotSprite.x;
-      const startY = this.robotSprite.y;
-      const duration = 3000;
+    updateCargoPositions(robot) {
+      if (!robot.cargoSprites || robot.cargoSprites.length === 0) return;
+
+      const cargo = robot.cargoSprites[0]; // Tylko jeden sprite ładunku
+      if (!cargo) return;
+
+      // Ładunek podąża za robotem
+      const targetX = robot.sprite.x - 35;
+      const targetY = robot.sprite.y;
+
+      // Płynne przesuwanie ładunku
+      const lerpFactor = 0.15;
+      cargo.x += (targetX - cargo.x) * lerpFactor;
+      cargo.y += (targetY - cargo.y) * lerpFactor;
+    },
+
+    startAllRobotsMovement() {
+      this.robotSprites.forEach((robot, index) => {
+        setTimeout(() => {
+          this.moveRobotToNextPoint(robot);
+        }, 1000);
+      });
+    },
+
+    moveRobotToNextPoint(robot) {
+      if (robot.isMoving || !robot.sprite) return;
+      const robotPath = this.robotStore.robotPaths[robot.id];
+      if (!robotPath) return;
+
+      if (!robot.nextPoint) {
+        robot.nextPoint = robotPath[0];
+      } else {
+        const lastVisitedPoint = robot.nextPoint;
+        const nextPointIndex = robotPath.findIndex((x) => x === lastVisitedPoint);
+        if (nextPointIndex + 1 <= robotPath.length) {
+          robot.nextPoint = robotPath[nextPointIndex + 1];
+        }
+      }
+
+      const targetPoint = this.mapPoints.find((x) => x.id === robot.nextPoint);
+      if (!targetPoint) {
+        return;
+      }
+      robot.isMoving = true;
+
+      this.animateRobotToPoint(robot, targetPoint, () => {
+        robot.isMoving = false;
+
+        // Różne opóźnienia dla każdego robota
+        const delay = 2000 + robot.id * 200;
+        setTimeout(() => this.moveRobotToNextPoint(robot), delay);
+      });
+    },
+
+    animateRobotToPoint(robot, targetPoint, onComplete) {
+      const startX = robot.sprite.x;
+      const startY = robot.sprite.y;
+      const duration = 3000 + robot.id * 100; // Różne prędkości
       const startTime = performance.now();
 
       const animate = (currentTime) => {
@@ -280,8 +439,11 @@ export default {
         const progress = Math.min(elapsed / duration, 1);
         const easeProgress = this.easeInOutQuad(progress);
 
-        this.robotSprite.x = startX + (targetPoint.x - startX) * easeProgress;
-        this.robotSprite.y = startY + (targetPoint.y - startY) * easeProgress;
+        robot.sprite.x = startX + (targetPoint.x - startX) * easeProgress;
+        robot.sprite.y = startY + (targetPoint.y - startY) * easeProgress;
+
+        // Aktualizuj pozycję ładunków
+        this.updateCargoPositions(robot);
 
         if (progress < 1) {
           requestAnimationFrame(animate);
@@ -294,10 +456,32 @@ export default {
     },
 
     // === PATH DRAWING ===
+    startPathGeneration() {
+      this.stopPathGeneration(); // Clear existing interval
+
+      if (this.mapPoints.length < 2 || this.transitions.length === 0) {
+        console.warn("Not enough points or transitions for path generation");
+        return;
+      }
+
+      // Generate initial paths
+      this.robotStore.generatePathsForAllRobots(this.mapPoints, this.transitions);
+
+      // Set up interval for path regeneration every 20 seconds
+      this.pathGenerationInterval = setInterval(() => {
+        this.robotStore.generatePathsForAllRobots(this.mapPoints, this.transitions);
+      }, 20000);
+    },
+
+    stopPathGeneration() {
+      if (this.pathGenerationInterval) {
+        clearInterval(this.pathGenerationInterval);
+        this.pathGenerationInterval = null;
+      }
+    },
     drawPaths() {
       this.clearExistingPaths();
 
-      // Pobierz connections z mockData lub store
       const connections = this.areaDataStore.areaMapPoints?.transitions || [];
 
       connections.forEach((connection) => {
@@ -308,14 +492,14 @@ export default {
           const line = new PIXI.Graphics();
           line.moveTo(fromPoint.x, fromPoint.y).lineTo(toPoint.x, toPoint.y).stroke({ width: 2, color: 0x0066cc });
 
-          line.label = `path_${connection.from}_${connection.to}`;
+          line.label = `path_${connection.startSpotId}_${connection.endSpotId}`;
           this.mapContainer.addChild(line);
         }
       });
     },
 
     clearExistingPaths() {
-      const pathsToRemove = this.mapContainer.children.filter((child) => child.label === "paths");
+      const pathsToRemove = this.mapContainer.children.filter((child) => child.label && child.label.startsWith("path"));
       pathsToRemove.forEach((path) => this.mapContainer.removeChild(path));
     },
 
@@ -351,7 +535,7 @@ export default {
       this.resizeTimeout = setTimeout(() => {
         if (!this.app || !this.$refs.mapContainer) return;
         this.app.renderer.resize(this.$refs.mapContainer.offsetWidth, this.$refs.mapContainer.offsetHeight);
-      }, 16); // ~60fps
+      }, 16);
     },
 
     onDragStart(event) {
@@ -360,13 +544,14 @@ export default {
         x: event.global.x,
         y: event.global.y,
       };
-      this.pointsContainer.interactiveChildren = false;
+      if (this.pointsContainer) {
+        this.pointsContainer.interactiveChildren = false;
+      }
     },
 
     onDragMove(event) {
       if (!this.isDragging) return;
 
-      // Throttle do 16ms (~60fps)
       if (this.dragThrottle) return;
       this.dragThrottle = requestAnimationFrame(() => {
         const deltaX = event.global.x - this.lastPointerPosition.x;
@@ -382,7 +567,9 @@ export default {
 
     onDragEnd() {
       this.isDragging = false;
-      this.pointsContainer.interactiveChildren = true;
+      if (this.pointsContainer) {
+        this.pointsContainer.interactiveChildren = true;
+      }
     },
 
     onWheel(event) {
@@ -415,6 +602,7 @@ export default {
       }
 
       window.removeEventListener("resize", this.handleResize);
+      this.stopPathGeneration();
 
       if (this.app) {
         this.app.destroy(true);
