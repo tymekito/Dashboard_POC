@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { useAreaDataStore } from "@/stores/common/areaData/store.js";
+import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
 
 export default {
   name: "MapContent",

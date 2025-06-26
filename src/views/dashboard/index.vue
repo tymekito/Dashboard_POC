@@ -1,33 +1,11 @@
 <template>
   <div class="map-container">
-    <!-- Left Panel -->
-    <div
-      class="side-panel left-panel"
-      :class="{ collapsed: dashboardStore.leftPanelCollapsed, resizing: isResizing && currentPanel === 'left' }"
-      :style="{ width: leftPanelWidth }"
-    >
-      <div class="panel-content" v-if="!dashboardStore.leftPanelCollapsed">
-        <LeftPanel />
-      </div>
-      <PanelCollapseButton
-        v-if="!isResizing"
-        :is-collapsed="dashboardStore.leftPanelCollapsed"
-        side="left"
-        @toggle="dashboardStore.toggleLeftPanel"
-      />
-      <ResizeHandle
-        v-if="!dashboardStore.leftPanelCollapsed"
-        side="right"
-        @start-resize="(e) => startResize(e, 'left')"
-      />
-    </div>
-
     <!-- Map Area -->
     <div class="map-area">
       <MapContent v-if="areaDataStore.areaName" />
     </div>
 
-    <!-- Right Panel -->
+    <!-- Right Panel z RobotTile -->
     <div
       class="side-panel right-panel"
       :class="{ collapsed: dashboardStore.rightPanelCollapsed, resizing: isResizing && currentPanel === 'right' }"
@@ -53,7 +31,6 @@
 
 <script>
 import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
-import LeftPanel from "./components/LeftPanel/index.vue";
 import MapContent from "./components/MapContent/index.vue";
 import RightPanel from "./components/RightPanel/index.vue";
 import PanelCollapseButton from "./mixins/PanelCollapseButton/index.vue";
@@ -64,7 +41,6 @@ export default {
   name: "DashboardMap",
   components: {
     MapContent,
-    LeftPanel,
     RightPanel,
     PanelCollapseButton,
     ResizeHandle,
@@ -76,6 +52,7 @@ export default {
       dashboardStore: useDashboardStore(),
     };
   },
+
   data: () => ({
     isResizing: false,
     startX: 0,
@@ -84,9 +61,6 @@ export default {
   }),
 
   computed: {
-    leftPanelWidth() {
-      return this.dashboardStore.leftPanelCollapsed ? "2.5rem" : `${this.dashboardStore.leftPanelWidth}px`;
-    },
     rightPanelWidth() {
       return this.dashboardStore.rightPanelCollapsed ? "2.5rem" : `${this.dashboardStore.rightPanelWidth}px`;
     },
@@ -107,7 +81,7 @@ export default {
       this.isResizing = true;
       this.currentPanel = panel;
       this.startX = event.clientX;
-      this.startWidth = panel === "left" ? this.dashboardStore.leftPanelWidth : this.dashboardStore.rightPanelWidth;
+      this.startWidth = this.dashboardStore.rightPanelWidth;
 
       this.setResizingState(true);
       event.preventDefault();
@@ -118,21 +92,14 @@ export default {
 
       requestAnimationFrame(() => {
         const deltaX = event.clientX - this.startX;
-        const newWidth = this.currentPanel === "left" ? this.startWidth + deltaX : this.startWidth - deltaX;
-
+        const newWidth = this.startWidth - deltaX;
         const clampedWidth = Math.max(200, Math.min(600, newWidth));
-
-        if (this.currentPanel === "left") {
-          this.dashboardStore.setLeftPanelWidth(clampedWidth);
-        } else {
-          this.dashboardStore.setRightPanelWidth(clampedWidth);
-        }
+        this.dashboardStore.setRightPanelWidth(clampedWidth);
       });
     },
 
     stopResize() {
       if (!this.isResizing) return;
-
       this.isResizing = false;
       this.currentPanel = null;
       this.setResizingState(false);
@@ -178,14 +145,8 @@ export default {
   }
 }
 
-.left-panel {
-  order: 1;
-  margin-right: 0.25rem;
-  height: inherit;
-}
-
 .right-panel {
-  order: 3;
+  order: 2;
   margin-left: 0.25rem;
 }
 
@@ -200,7 +161,7 @@ export default {
   border: 0.125rem solid colors.$lightBlue;
   border-radius: 0.5rem;
   margin: 0.5rem 0.25rem;
-  order: 2;
+  order: 1;
   overflow: hidden;
 }
 </style>
