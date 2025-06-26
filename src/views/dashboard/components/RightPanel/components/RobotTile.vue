@@ -1,6 +1,5 @@
 <template>
   <div class="robot-tile" :style="tileStyle">
-    <!-- Pierwszy wiersz: header z typem, nazwą, flotą -->
     <div class="robot-header-main">
       <div class="robot-type-icon" :class="typeIconClass">
         <img :src="typeIcon" :alt="robot.type" />
@@ -19,8 +18,6 @@
         <img :src="wifiIcon" alt="WiFi" />
       </div>
     </div>
-
-    <!-- Drugi wiersz: szczegóły robota -->
     <div class="robot-details">
       <div class="mission-row">
         <div class="icon-wrapper" :class="missionClass">
@@ -29,7 +26,7 @@
         <div v-if="robot.missionStartTime" class="mission-time">
           {{ robot.programName || "Program" }} ({{ missionExecutionTime }})
         </div>
-        <div v-else class="idle-time">{{ idleTime }}</div>
+        <div v-else class="idle-time">({{ idleTime }})</div>
       </div>
       <div v-if="actionIcon" class="action-icon" :class="actionClass">
         <img :src="actionIcon" :alt="robot.currentAction" />
@@ -230,10 +227,10 @@ export default {
 <style scoped lang="scss">
 @use "@/assets/styles/abstracts/_colors.module.scss" as colors;
 
-$tile-height: 25px;
-$icon-size: 23px;
-$small-icon-size: 18px;
-$battery-width: 32px;
+$tile-title--height: 35px;
+$icon-size: 25px;
+$small-icon-size: 20px;
+$battery-width: 30px;
 $battery-height: 16px;
 $battery-terminal-width: 2px;
 $battery-terminal-height: 6px;
@@ -262,9 +259,9 @@ $battery-terminal-offset: 3px;
 .robot-header-main {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
   gap: 0.5rem;
-  height: $tile-height;
+  height: $tile-title--height;
   background-color: colors.$lightBlue;
   padding: 0 0.5rem;
 
@@ -272,7 +269,6 @@ $battery-terminal-offset: 3px;
     color: colors.$white;
     font-weight: 600;
     font-size: 1.2rem;
-    flex: 1;
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -315,10 +311,12 @@ $battery-terminal-offset: 3px;
 }
 
 .robot-details {
-  height: calc(100% - $tile-height);
+  height: calc(100% - $tile-title--height);
   padding: 0 0.5rem;
-  gap: 1rem;
+  row-gap: 0;
+  column-gap: 1.5rem;
   flex-wrap: wrap;
+  margin-bottom: 0.25rem;
   @include flex-center;
 }
 
@@ -368,7 +366,7 @@ $battery-terminal-offset: 3px;
 
 .battery-icon {
   position: relative;
-  width: $battery-width;
+  min-width: $battery-width;
   height: $battery-height;
   margin: 4.5px 0;
   border: 1px solid colors.$whiteAlfa60;
@@ -511,7 +509,7 @@ $battery-terminal-offset: 3px;
     font-family: monospace;
     font-size: 1.1rem;
     font-weight: 500;
-    white-space: nowrap;
+    text-wrap: wrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
