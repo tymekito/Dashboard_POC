@@ -10,10 +10,4 @@ export const HTTP_OPERATIONS = {
 
 export const LANGUAGE_CODE = {
   PL: "pl",
-  EN: "en",
-};
-
-export const Names = {
-  appName: "IntraFleet4",
-  appMainName: "IntraFleet",
 };

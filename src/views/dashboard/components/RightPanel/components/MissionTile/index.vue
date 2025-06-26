@@ -129,6 +129,7 @@ $icon-size: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 0.5rem;
   height: calc(100% - $header-height);
 }
 
@@ -152,6 +153,7 @@ $icon-size: 20px;
 .time-section {
   display: flex;
   flex-direction: row;
+  gap: 0.5rem;
 
   .start-time {
     color: colors.$green;

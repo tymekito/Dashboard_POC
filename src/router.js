@@ -11,7 +11,7 @@ const router = createRouter({
     {
       path: "/selector",
       name: "DashboardSelector",
-      component: () => import("@/views/dashboadSelector/index.vue"),
+      component: () => import("@/views/dashboardSelector/index.vue"),
     },
     {
       path: "/area/:name",

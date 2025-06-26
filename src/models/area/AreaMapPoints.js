@@ -1,4 +1,4 @@
-export default class AreMapPoints {
+export default class AreaMapPoints {
   constructor(data) {
     this.id = data.id;
     this.spots = data.spots;

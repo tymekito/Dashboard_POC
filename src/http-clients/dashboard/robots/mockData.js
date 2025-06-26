@@ -1,4 +1,3 @@
-// RobotDataDto.js - dodane pole cargoCount
 export class RobotDataDto {
   constructor(data = {}) {
     this.id = data.id || null;
@@ -10,7 +9,6 @@ export class RobotDataDto {
     this.missionStartTime = data.missionStartTime || null;
     this.missionExecutionTime = data.missionExecutionTime || null;
     this.isOperational = data.isOperational || false;
-    this.cargoCount = data.cargoCount || 0; // Nowe pole - liczba ładunków 0-8
   }
 
   static fromArray(dataArray) {
@@ -28,13 +26,9 @@ export class RobotDataDto {
   get hasAction() {
     return this.currentAction !== null;
   }
-
-  get hasLoadedCargo() {
-    return this.cargoCount > 0;
-  }
 }
 
-// Rozszerzona funkcja generateRobots z cargoCount
+// Function to generate more robots if needed
 export function generateRobots(count) {
   const robots = [];
   const types = ["fork", "picker"];
@@ -42,8 +36,6 @@ export function generateRobots(count) {
 
   for (let i = 1; i <= count; i++) {
     const hasAction = Math.random() > 0.3;
-    const cargoCount = Math.floor(Math.random() * 9); // 0-8 ładunków
-
     robots.push(
       new RobotDataDto({
         id: i,
@@ -55,7 +47,6 @@ export function generateRobots(count) {
         missionStartTime: hasAction ? new Date(Date.now() - Math.random() * 600000) : null,
         missionExecutionTime: hasAction ? new Date(Date.now() - Math.random() * 60000000) : null,
         isOperational: Math.random() > 0.1,
-        cargoCount: cargoCount,
       }),
     );
   }

@@ -30,15 +30,14 @@
             <v-list class="area-list" bg-color="transparent">
               <v-list-item
                 v-for="area in displayedAreas"
-                :key="area.id"
-                :value="area.id"
+                :key="area.name"
+                :value="area.name"
                 @click="selectArea(area)"
-                :class="{ selected: selectedArea?.id === area.id }"
+                :class="{ selected: selectedArea?.name === area.name }"
                 class="area-item"
                 rounded
               >
                 <v-list-item-title class="area-name">{{ area.name }}</v-list-item-title>
-                <v-list-item-subtitle class="area-description">({{ area.description }})</v-list-item-subtitle>
               </v-list-item>
             </v-list>
           </div>
@@ -98,7 +97,6 @@ export default {
       };
     },
     displayedAreas() {
-      // Jeśli mamy wybrany element i nie jest w filtrowanej liście, dodajemy go
       if (this.selectedArea && !this.filteredAreas.some((area) => area.id === this.selectedArea.id)) {
         return [this.selectedArea, ...this.filteredAreas];
       }
@@ -125,12 +123,12 @@ export default {
 
       const query = this.searchQuery.toLowerCase();
       this.filteredAreas = this.areas.filter(
-        (area) => area.name.toLowerCase().includes(query) || area.description.toLowerCase().includes(query),
+        (area) => area.name.toLowerCase().includes(query) || area.name === this.selectedArea.name,
       );
     },
 
     selectArea(area) {
-      if (this.selectedArea?.id === area.id) {
+      if (this.selectedArea?.name === area.name) {
         this.selectedArea = null;
       } else {
         this.selectedArea = area;
@@ -199,7 +197,6 @@ export default {
 
   :deep(.v-field) {
     background-color: colors.$whiteAlfa05 !important;
-    // border: 1px solid colors.$lightBlue !important;
     border-radius: 0.8rem !important;
 
     .v-label {
@@ -275,7 +272,6 @@ export default {
   background-color: colors.$darkBlue !important;
 }
 
-// Scrollbar styling
 .area-list::-webkit-scrollbar {
   width: 6px;
 }

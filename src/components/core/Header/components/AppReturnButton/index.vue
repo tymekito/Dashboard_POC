@@ -20,7 +20,7 @@
 import Config from "@/app.config.js";
 
 export default {
-  name: "BackButton",
+  name: "AppReturnButton",
   methods: {
     handleBackClick() {
       if (Config.appV1Url()) {

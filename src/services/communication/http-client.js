@@ -2,7 +2,7 @@ import Config from "@/app.config.js";
 import { HTTP_OPERATIONS } from "@/services/communication/constants.js";
 import { displayError, displaySuccess } from "@/services/notiffications/notification-service.js";
 import { translationFormatter } from "@/services/translations/translation-service.js";
-import { useLoaderStore } from "@/stores/common/loader/store.js";
+import { useLoaderStore } from "@/stores/core/loader/store.js";
 import axios from "axios";
 import qs from "qs";
 
@@ -55,18 +55,20 @@ function getSuccessMessage(operation) {
     case HTTP_OPERATIONS.PUT:
     case HTTP_OPERATIONS.PATCH:
     case HTTP_OPERATIONS.DELETE:
-      return translationFormatter("notifications.success");
+      return translationFormatter("general.notifications.success");
     default:
-      return translationFormatter("notifications.unsupported-operation");
+      return translationFormatter("general.notifications.unsupported-operation");
   }
 }
 
 function getErrorMessage(error) {
-  switch (error.response?.status) {
+  switch (error.response.status) {
     case 404:
-      return translationFormatter("notifications.resource-not-found");
+      return translationFormatter("general.notifications.resource-not-found");
     default:
-      return error.response?.data.Message ? error.response.data.Message : translationFormatter("notifications.error");
+      return error.response.data.Message
+        ? error.response.data.Message
+        : translationFormatter("general.notifications.error");
   }
 }
 

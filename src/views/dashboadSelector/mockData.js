@@ -1,12 +1,12 @@
 export const mockAreas = [
   {
     id: 1,
-    name: "etiSalma",
-    description: "Obszar z duża ilośćią punktów",
+    name: "Polipak",
+    description: "Główny magazyn - sektor A",
   },
   {
     id: 2,
-    name: "Polipak",
-    description: "Obszar z małą ilością punktów",
+    name: "etiSalma",
+    description: "Magazyn pomocniczy - sektor B",
   },
 ];

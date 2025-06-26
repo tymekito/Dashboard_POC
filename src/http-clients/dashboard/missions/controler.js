@@ -3,6 +3,6 @@ import { generateMissions } from "./mockData.js";
 
 export const missionController = {
   async getAllMissions() {
-    return generateMissions(8);
+    return generateMissions(15);
   },
 };

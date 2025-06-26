@@ -23,11 +23,6 @@
         <div v-if="actionIcon" class="action-icon" :class="actionClass">
           <img :src="actionIcon" :alt="robot.currentAction" />
         </div>
-        <div v-if="robot.cargoCount > 0" class="cargo-info">
-          <div class="cargo-icon">
-            <span class="cargo-count">{{ robot.cargoCount }}</span>
-          </div>
-        </div>
       </div>
       <div class="action-section">
         <div class="mission-row">
@@ -386,24 +381,6 @@ $battery-terminal-offset: 3px;
 
   &.action-gocharging {
     background: colors.$yellow;
-  }
-}
-
-.cargo-info {
-  .cargo-icon {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #8b4513, #654321);
-    border-radius: 3px;
-    @include flex-center;
-    position: relative;
-
-    .cargo-count {
-      color: colors.$white;
-      font-size: 1rem;
-      font-weight: bold;
-      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
-    }
   }
 }
 

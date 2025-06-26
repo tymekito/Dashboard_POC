@@ -1,42 +1,37 @@
-// services/notification-service.js
 import { notify } from "@kyvg/vue3-notification";
 
-export function displaySuccess(message, title = "Success") {
+export function displaySuccess(message) {
   notify({
     type: "success",
-    title,
     text: message,
     duration: 3000,
     position: "bottom",
   });
 }
 
-export function displayError(message, title = "Error") {
+export function displayError(message) {
   notify({
     type: "error",
-    title,
     text: message,
     duration: 5000,
     position: "bottom",
   });
 }
 
-export function displayInfo(message, title = "Info") {
+export function displayInfo(message) {
   notify({
     type: "info",
-    title,
     text: message,
     duration: 3000,
     position: "bottom",
   });
 }
 
-export function displayWarning(message, title = "Warning") {
+export function displayWarning(message) {
   notify({
     type: "warn",
-    title,
     text: message,
-    duration: 4000,
+    duration: 5000,
     position: "bottom",
   });
 }
