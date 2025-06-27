@@ -1,0 +1,5 @@
+export const LAYOUT_CONFIG = {
+  TILE_HEIGHT: 125,
+  TILE_WIDTH: 140,
+  TILE_GAP: 8,
+};

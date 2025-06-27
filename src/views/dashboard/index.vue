@@ -1,8 +1,11 @@
 <template>
   <div class="map-container">
     <!-- Map Area -->
-    <div class="map-area">
-      <MapContent v-if="areaDataStore.areaName" />
+    <div class="main-content">
+      <div class="map-area">
+        <MapContent class="map-content" v-if="areaDataStore.areaName" />
+      </div>
+      <BottomBar class="bottom-content" />
     </div>
 
     <!-- Right Panel z RobotTile -->
@@ -31,6 +34,7 @@
 
 <script>
 import { useAreaDataStore } from "@/stores/common/dashboard/areaData/store.js";
+import BottomBar from "./components/BottomBar/index.vue";
 import MapContent from "./components/MapContent/index.vue";
 import RightPanel from "./components/RightPanel/index.vue";
 import PanelCollapseButton from "./mixins/PanelCollapseButton/index.vue";
@@ -42,6 +46,7 @@ export default {
   components: {
     MapContent,
     RightPanel,
+    BottomBar,
     PanelCollapseButton,
     ResizeHandle,
   },
@@ -117,10 +122,15 @@ export default {
 @use "@/assets/styles/abstracts/_colors.module.scss" as colors;
 @use "@/assets/styles/abstracts/_sizes.scss" as sizes;
 
+:root {
+  --bottom-bar-height: 125px;
+}
+
 .map-container {
   display: flex;
   height: calc(100dvh - sizes.$header);
   background-color: colors.$darkBlue;
+  position: relative;
 }
 
 .side-panel {
@@ -157,11 +167,23 @@ export default {
 }
 
 .map-area {
-  flex: 1;
+  height: calc(100% - 150px);
+
   border: 0.125rem solid colors.$lightBlue;
   border-radius: 0.5rem;
-  margin: 0.5rem 0.25rem;
+}
+.main-content {
+  flex: 1;
   order: 1;
   overflow: hidden;
+  margin: 0.5rem 0.25rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bottom-content {
+  border: 0.125rem solid colors.$lightBlue;
+  border-radius: 0.5rem;
 }
 </style>
