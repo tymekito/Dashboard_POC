@@ -16,6 +16,7 @@ export class RobotDataDto {
     this.cargoCount = data.cargoCount || 0;
     this.lastMissionEnd = data.lastMissionEnd || null;
     this.startTime = data.startTime || new Date();
+    this.isError = data.isError || false;
   }
 
   static fromArray(dataArray) {
@@ -97,6 +98,7 @@ export function generateRobots(count) {
         missionStartTime: hasMission ? new Date(Date.now() - Math.random() * 600000) : null,
         missionExecutionTime: hasMission ? new Date(Date.now() - Math.random() * 60000000) : null,
         isOperational: Math.random() > 0.1,
+        isError: Math.random() > 0.9,
 
         // Nowe pola
         fleet: getRandomElement(ROBOT_FLEETS),

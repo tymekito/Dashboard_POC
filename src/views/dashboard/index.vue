@@ -93,7 +93,7 @@ export default {
       requestAnimationFrame(() => {
         const deltaX = event.clientX - this.startX;
         const newWidth = this.startWidth - deltaX;
-        const clampedWidth = Math.max(200, Math.min(600, newWidth));
+        const clampedWidth = Math.max(200, Math.min(1000, newWidth));
         this.dashboardStore.setRightPanelWidth(clampedWidth);
       });
     },
